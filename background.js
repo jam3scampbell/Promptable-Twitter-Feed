@@ -1,5 +1,4 @@
 chrome.runtime.onInstalled.addListener(async () => {
-  console.log('Extension installed/updated');
   try {
     // Clear old settings
     await chrome.storage.sync.clear();
@@ -19,7 +18,6 @@ chrome.runtime.onInstalled.addListener(async () => {
       theme: { enabled: false }
     };
 
-    console.log('Setting default settings:', defaultSettings);
     await chrome.storage.sync.set({ settings: defaultSettings });
   } catch (error) {
     console.error('Failed to initialize settings:', error);

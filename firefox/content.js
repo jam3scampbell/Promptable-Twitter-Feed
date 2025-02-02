@@ -1,23 +1,16 @@
-console.log('Content script loaded');
-
 let activeStyles = new Map();
 
 const injectTheme = async () => {
   try {
-    console.log('Injecting theme...');
     const { settings } = await browser.storage.local.get('settings');
-    console.log('Retrieved settings:', JSON.stringify(settings, null, 2));
     
     StyleManager.removeAllStyles();
     
     if (!settings) {
-      console.log('No settings found, skipping modifications');
       return;
     }
     
     Object.entries(TWITTER_MODS).forEach(([modType, modConfig]) => {
-      console.log(`Checking ${modType}:`, settings?.[modType]);
-      
       if (modType === 'theme') {
         FeatureHandlers.theme(modConfig, settings?.theme?.enabled === true);
       } else {
@@ -28,13 +21,13 @@ const injectTheme = async () => {
       }
     });
   } catch (error) {
+    // Keep error logging for debugging
     console.error('Failed to apply modifications:', error);
   }
 };
 
 // Listen for theme update messages from background script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('Content script received message:', message);
   if (message.type === 'refreshTheme') {
     injectTheme();
     sendResponse({ status: 'ok' });
@@ -81,12 +74,10 @@ const StyleManager = {
     const style = StyleManager.createStyle(id, css);
     document.head.appendChild(style);
     activeStyles.set(id, style);
-    console.log(`Applied style: ${id}`);
   },
 
   removeAllStyles: () => {
     document.querySelectorAll('style[id^="twitter-theme-"]').forEach(style => {
-      console.log('Removing style:', style.id);
       style.remove();
     });
     activeStyles.clear();

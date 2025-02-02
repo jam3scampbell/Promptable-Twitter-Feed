@@ -1,7 +1,5 @@
 // Firefox-compatible background script
 browser.runtime.onInstalled.addListener(() => {
-  console.log('Extension installed/updated');
-  
   // Clear old settings
   browser.storage.local.clear().then(() => {
     // Set new default settings
@@ -19,7 +17,6 @@ browser.runtime.onInstalled.addListener(() => {
       theme: { enabled: false }
     };
 
-    console.log('Setting default settings:', defaultSettings);
     return browser.storage.local.set({ settings: defaultSettings });
   }).catch(error => {
     console.error('Failed to initialize settings:', error);

@@ -65,19 +65,16 @@ function createToggle(id, label, checked, onChange) {
 
 async function updateSetting(modType, key, value) {
   try {
-    console.log(`Updating setting: ${modType}.${key} = ${value}`);
     const { settings = {} } = await chrome.storage.sync.get('settings');
     
     if (!settings[modType]) settings[modType] = {};
     if (!settings[modType][key]) settings[modType][key] = {};
     settings[modType][key].enabled = value;
     
-    console.log('New settings:', settings);
     await chrome.storage.sync.set({ settings });
     
     // Notify content script to refresh
     const tabs = await chrome.tabs.query({ url: ['*://twitter.com/*', '*://x.com/*'] });
-    console.log('Found tabs to update:', tabs);
     
     const updatePromises = tabs.map(tab => 
       chrome.tabs.sendMessage(tab.id, { 

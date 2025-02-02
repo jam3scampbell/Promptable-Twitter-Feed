@@ -1,14 +1,8 @@
-console.log('Popup script starting...');
-console.log('TWITTER_MODS:', typeof TWITTER_MODS !== 'undefined' ? TWITTER_MODS : 'Not loaded');
-
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('DOM Content Loaded');
   const settingsDiv = document.getElementById('settings');
-  console.log('Settings div:', settingsDiv);
   
   try {
     const { settings } = await browser.storage.local.get('settings');
-    console.log('Retrieved settings:', settings);
 
     // Section order and titles
     const sections = [
@@ -18,10 +12,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       { id: 'hideElements', title: 'Hide Elements' }
     ];
 
-    console.log('Creating sections...');
     // Create sections in order
     sections.forEach(({ id, title }) => {
-      console.log(`Processing section: ${id}`);
       if (TWITTER_MODS[id]) {
         const sectionDiv = document.createElement('div');
         
@@ -50,8 +42,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         sectionDiv.appendChild(contentDiv);
         settingsDiv.appendChild(sectionDiv);
-      } else {
-        console.log(`Section ${id} not found in TWITTER_MODS`);
       }
     });
   } catch (error) {
@@ -60,7 +50,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function createToggle(id, label, checked, onChange) {
-  console.log(`Creating toggle: ${id}, ${label}, ${checked}`);
   const div = document.createElement('div');
   div.className = 'mod-item';
   
@@ -81,19 +70,16 @@ function createToggle(id, label, checked, onChange) {
 
 async function updateSetting(modType, key, value) {
   try {
-    console.log(`Updating setting: ${modType}.${key} = ${value}`);
     const { settings = {} } = await browser.storage.local.get('settings');
     
     if (!settings[modType]) settings[modType] = {};
     if (!settings[modType][key]) settings[modType][key] = {};
     settings[modType][key].enabled = value;
     
-    console.log('New settings:', settings);
     await browser.storage.local.set({ settings });
     
     // Notify content script to refresh
     const tabs = await browser.tabs.query({ url: ['*://twitter.com/*', '*://x.com/*'] });
-    console.log('Found tabs to update:', tabs);
     
     const updatePromises = tabs.map(tab => 
       browser.tabs.sendMessage(tab.id, { 
