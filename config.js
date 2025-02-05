@@ -184,6 +184,8 @@ const TWITTER_MODS = {
   },
 
   // UI Element Replacements
+  // Setting .parent to a string hides the current replaceElement as a checkbox,
+  // and instead automatically applies it along with its parent
   replaceElements: {
     xLogo: {
       enabled: false,
@@ -196,9 +198,9 @@ const TWITTER_MODS = {
         height: '24px'
       }
     },
-    tweetButtonHome: {
+    tweetButton: {
       enabled: false,
-      description: "Replace 'Post' with 'Tweet' (Home)",
+      description: "Replace 'Post' with 'Tweet'",
       type: 'buttonReplace',
       target: 'button[data-testid="tweetButtonInline"]',
       replacementData: {
@@ -254,6 +256,7 @@ const TWITTER_MODS = {
       }
     },
     tweetButtonSidebar: {
+      parent: "tweetButton",
       enabled: false,
       description: "Replace 'Post' with 'Tweet' (Left)",
       type: 'buttonReplace',
@@ -297,6 +300,7 @@ const TWITTER_MODS = {
       }
     },
     tweetButtonPopup: {
+      parent: "tweetButton",
       enabled: false,
       description: "Replace 'Post' with 'Tweet' (Compose Popup)",
       type: 'buttonReplace',
