@@ -9,10 +9,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       { id: 'buttonColors', title: 'Button Colors' },
       { id: 'replaceElements', title: 'UI Elements' },
       { id: 'styleFixes', title: 'Style Fixes' },
+      {
+        id: 'hideElements',
+        title: 'Grok',
+        filter: key => key === 'grok'
+      },
       { 
         id: 'hideElements', 
+        title: 'Hide Side Tabs',
+        filter: key => ['communities', 'premium', 'jobs', 'articles', 'explore', 'notifications', 'messages', 'business', 'communityNotes'].includes(key)
+      },
+      {
+        id: 'hideElements',
         title: 'Hide Elements',
-        filter: key => !['replyCounts', 'retweetCounts', 'likeCounts', 'viewCounts'].includes(key)
+        filter: key => ['sidebar', 'trending', 'brokenSpacer'].includes(key)
       },
       {
         id: 'hideElements',

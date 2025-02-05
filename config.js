@@ -52,7 +52,7 @@ const TWITTER_MODS = {
     },
     communities: {
       enabled: false,
-      description: "Hide Communities Button",
+      description: "Hide Communities Tab",
       selectors: [
         'a[aria-label="Communities"][role="link"]',
 
@@ -63,7 +63,7 @@ const TWITTER_MODS = {
     },
     premium: {
       enabled: false,
-      description: "Hide Premium Button",
+      description: "Hide Premium Tab",
       selectors: [
         'a[data-testid="premium-hub-tab"]',
         'a[data-testid="premium-signup-tab"]',
@@ -72,7 +72,7 @@ const TWITTER_MODS = {
     },
     jobs: {
       enabled: false,
-      description: "Hide Jobs Button",
+      description: "Hide Jobs Tab",
       selectors: [
         'a[data-testid="jobs-tab-item"]',
         'a[aria-label="Jobs"][role="link"]',
@@ -81,7 +81,7 @@ const TWITTER_MODS = {
     },
     articles: {
       enabled: false,
-      description: "Hide Articles Button",
+      description: "Hide Articles Tab",
       selectors: [
         'a[href$="/compose/articles"]',
         'a[aria-label="Articles"][role="link"]'
@@ -114,7 +114,7 @@ const TWITTER_MODS = {
     },
     business: {
       enabled: false,
-      description: "Hide Business Button",
+      description: "Hide Business Tab",
       selectors: [
         'a[aria-label="Business"][role="link"]',
         'a[href$="i/verified-orgs-signup"]'
@@ -122,7 +122,7 @@ const TWITTER_MODS = {
     },
     communityNotes: {
       enabled: false,
-      description: "Hide Community Notes Button",
+      description: "Hide Community Notes Tab",
       selectors: [
         'a[aria-label="Community Notes"][role="link"]',
         'a[href$="i/communitynotes"]'
