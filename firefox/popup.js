@@ -9,11 +9,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       { id: 'buttonColors', title: 'Button Colors' },
       { id: 'replaceElements', title: 'UI Elements' },
       { id: 'styleFixes', title: 'Style Fixes' },
-      { id: 'hideElements', title: 'Hide Elements' }
+      { 
+        id: 'hideElements', 
+        title: 'Hide Elements',
+        filter: key => !['replyCounts', 'retweetCounts', 'likeCounts', 'viewCounts'].includes(key)
+      },
+      {
+        id: 'hideElements',
+        title: 'Engagement Metrics',
+        filter: key => ['replyCounts', 'retweetCounts', 'likeCounts', 'viewCounts'].includes(key)
+      }
     ];
 
     // Create sections in order
-    sections.forEach(({ id, title }) => {
+    sections.forEach(({ id, title, filter }) => {
       if (TWITTER_MODS[id]) {
         const sectionDiv = document.createElement('div');
         
@@ -29,6 +38,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Add toggles for each sub-setting
         Object.entries(TWITTER_MODS[id]).forEach(([key, config]) => {
+          // Skip if there's a filter and this key doesn't match
+          if (filter && !filter(key)) return;
+          
           if (typeof config === 'object' && 'enabled' in config) {
             const item = createToggle(
               `${id}-${key}`,

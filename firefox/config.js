@@ -128,6 +128,8 @@ const TWITTER_MODS = {
         'a[href$="i/communitynotes"]'
       ]
     },
+
+    // Engagement Metrics
     replyCounts: {
       enabled: false,
       description: "Hide Reply Counts",
@@ -169,20 +171,6 @@ const TWITTER_MODS = {
         'a[aria-label*="views"][aria-label*="View post analytics"] span[data-testid="app-text-transition-container"]',
         // Additional backup using the specific view count icon
         'a[href$="/analytics"]:has(svg path[d*="M8.75 21V3h2v18h-2z"]) span[data-testid="app-text-transition-container"]'
-      ]
-    }
-  },
-
-  // Engagement Metrics
-  hideMetrics: {
-    replyCounts: {
-      enabled: false,
-      description: "Hide Reply Counts",
-      selectors: [
-        // Hide the number inside reply buttons
-        'button[data-testid="reply"] span[data-testid="app-text-transition-container"]',
-        // Backup using aria-label pattern
-        'button[aria-label*=" Replies"][role="button"] span[data-testid="app-text-transition-container"]'
       ]
     }
   },
