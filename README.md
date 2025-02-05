@@ -32,6 +32,8 @@ More blue, more birds, more vibes, and less Grok.
     /></a>
 </p>
 
+<br>
+
 <p align="center">
 A simple and customizable browser extension that makes Twitter (sometimes known as X) look more like Twitter.
 
