@@ -50,9 +50,17 @@ const TWITTER_MODS = {
         'div[role="presentation"]:has(div[style*="background-color: rgb(75, 78, 82)"][style*="border-radius: 9999px"])'
       ]
     },
+	userInfo: {
+		enabled: false,
+		description: "Hide User Info in Timeline",
+		selectors: [
+			'div[data-testid="Tweet-User-Avatar"]',
+			'div[data-testid="User-Name"]',
+		]
+	},
     communities: {
       enabled: false,
-      description: "Hide Communities Button",
+      description: "Hide Communities Tab",
       selectors: [
         'a[aria-label="Communities"][role="link"]',
 
@@ -63,7 +71,7 @@ const TWITTER_MODS = {
     },
     premium: {
       enabled: false,
-      description: "Hide Premium Button",
+      description: "Hide Premium Tab",
       selectors: [
         'a[data-testid="premium-hub-tab"]',
         'a[data-testid="premium-signup-tab"]',
@@ -72,7 +80,7 @@ const TWITTER_MODS = {
     },
     jobs: {
       enabled: false,
-      description: "Hide Jobs Button",
+      description: "Hide Jobs Tab",
       selectors: [
         'a[data-testid="jobs-tab-item"]',
         'a[aria-label="Jobs"][role="link"]',
@@ -81,7 +89,7 @@ const TWITTER_MODS = {
     },
     articles: {
       enabled: false,
-      description: "Hide Articles Button",
+      description: "Hide Articles Tab",
       selectors: [
         'a[href$="/compose/articles"]',
         'a[aria-label="Articles"][role="link"]'
@@ -95,9 +103,26 @@ const TWITTER_MODS = {
         'a[aria-label="Search and explore"][role="link"]'
       ]
     },
+    notifications: {
+      enabled: false,
+      description: "Hide Notifications Tab",
+      selectors: [
+        'a[data-testid="AppTabBar_Notifications_Link"]',
+        'a[aria-label*="Notifications"][role="link"]'
+      ]
+    },
+    messages: {
+      enabled: false,
+      description: "Hide Messages Tab",
+      selectors: [
+        'a[data-testid="AppTabBar_DirectMessage_Link"]',
+        'a[aria-label="Direct Messages"][role="link"]',
+        'a[href="/messages"]'
+      ]
+    },
     business: {
       enabled: false,
-      description: "Hide Business Button",
+      description: "Hide Business Tab",
       selectors: [
         'a[aria-label="Business"][role="link"]',
         'a[href$="i/verified-orgs-signup"]'
@@ -105,10 +130,55 @@ const TWITTER_MODS = {
     },
     communityNotes: {
       enabled: false,
-      description: "Hide Community Notes Button",
+      description: "Hide Community Notes Tab",
       selectors: [
         'a[aria-label="Community Notes"][role="link"]',
         'a[href$="i/communitynotes"]'
+      ]
+    },
+
+    // Engagement Metrics
+    replyCounts: {
+      enabled: false,
+      description: "Hide Reply Counts",
+      selectors: [
+        // Hide the number inside reply buttons
+        'button[data-testid="reply"] span[data-testid="app-text-transition-container"]',
+        // Backup using aria-label pattern
+        'button[aria-label*=" Replies"][role="button"] span[data-testid="app-text-transition-container"]'
+      ]
+    },
+    retweetCounts: {
+      enabled: false,
+      description: "Hide Repost Counts",
+      selectors: [
+        // Hide the number inside retweet buttons
+        'button[data-testid="retweet"] span[data-testid="app-text-transition-container"]',
+        // Backup using aria-label pattern
+        'button[aria-label*=" reposts"][role="button"] span[data-testid="app-text-transition-container"]'
+      ]
+    },
+    likeCounts: {
+      enabled: false,
+      description: "Hide Like Counts",
+      selectors: [
+        // Hide numbers in both liked and unliked states
+        'button[data-testid="like"] span[data-testid="app-text-transition-container"]',
+        'button[data-testid="unlike"] span[data-testid="app-text-transition-container"]',
+        // Backup using aria-label pattern
+        'button[aria-label*=" Likes"][role="button"] span[data-testid="app-text-transition-container"]'
+      ]
+    },
+    viewCounts: {
+      enabled: false,
+      description: "Hide View Counts",
+      selectors: [
+        // Target analytics link view counts
+        'a[href$="/analytics"] span[data-testid="app-text-transition-container"]',
+        // Backup using aria-label
+        'a[aria-label*="views"][aria-label*="View post analytics"] span[data-testid="app-text-transition-container"]',
+        // Additional backup using the specific view count icon
+        'a[href$="/analytics"]:has(svg path[d*="M8.75 21V3h2v18h-2z"]) span[data-testid="app-text-transition-container"]'
       ]
     }
   },

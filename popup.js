@@ -16,14 +16,33 @@ document.addEventListener('DOMContentLoaded', async () => {
       { id: 'buttonColors', title: 'Button Colors' },
       { id: 'replaceElements', title: 'UI Elements' },
       { id: 'styleFixes', title: 'Style Fixes' },
-      { id: 'hideElements', title: 'Hide Elements' }
+      {
+        id: 'hideElements',
+        title: 'Grok',
+        filter: key => key === 'grok'
+      },
+      { 
+        id: 'hideElements', 
+        title: 'Hide Side Tabs',
+        filter: key => ['communities', 'premium', 'jobs', 'articles', 'explore', 'notifications', 'messages', 'business', 'communityNotes'].includes(key)
+      },
+      {
+        id: 'hideElements',
+        title: 'Hide Elements',
+        filter: key => ['sidebar', 'trending', 'brokenSpacer', 'userInfo'].includes(key)
+      },
+      {
+        id: 'hideElements',
+        title: 'Engagement Metrics',
+        filter: key => ['replyCounts', 'retweetCounts', 'likeCounts', 'viewCounts'].includes(key)
+      }
     ];
 
     // Create sections in order
-    sections.forEach(({ id, title }) => {
+    sections.forEach(({ id, title, filter }) => {
       if (TWITTER_MODS[id]) {
         const sectionDiv = document.createElement('div');
-
+        
         // Add section title
         const titleDiv = document.createElement('div');
         titleDiv.className = 'section-title';
@@ -36,10 +55,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Add toggles for each sub-setting
         Object.entries(TWITTER_MODS[id]).forEach(([key, config]) => {
-          // For replaceElements, skip any entry that has a parent property.
+          // Skip if there's a filter and this key doesn't match
+          if (filter && !filter(key)) return;
+          
+          // For replaceElements, skip any entry that has a parent property
           if (id === 'replaceElements' && config.parent) {
             return;
           }
+
           if (typeof config === 'object' && 'enabled' in config) {
             const item = createToggle(
               `${id}-${key}`,
@@ -83,14 +106,13 @@ function createToggle(id, label, checked, onChange) {
 
 async function updateSetting(modType, key, value) {
   try {
-    console.log(`Updating setting: ${modType}.${key} = ${value}`);
-    const { settings = {} } = await chrome.storage.sync.get('settings');
+    const { settings = {} } = await browserAPI.storage.sync.get('settings');
 
     if (!settings[modType]) settings[modType] = {};
     if (!settings[modType][key]) settings[modType][key] = {};
     settings[modType][key].enabled = value;
 
-    // If this is a parent in replaceElements, update any children as well.
+    // If this is a parent in replaceElements, update any children as well
     if (modType === 'replaceElements') {
       const children = Object.entries(TWITTER_MODS.replaceElements)
         .filter(([childKey, childConfig]) => childConfig.parent === key)
@@ -102,13 +124,11 @@ async function updateSetting(modType, key, value) {
       });
     }
 
-    console.log('New settings:', settings);
     await browserAPI.storage.sync.set({ settings });
 
     // Notify content scripts to refresh
     const tabs = await browserAPI.tabs.query({ url: ['*://twitter.com/*', '*://x.com/*'] });
-    console.log('Found tabs to update:', tabs);
-
+    
     const updatePromises = tabs.map(tab =>
       browserAPI.tabs.sendMessage(tab.id, {
         type: 'refreshTheme',
@@ -118,7 +138,7 @@ async function updateSetting(modType, key, value) {
       }).catch(err => console.error(`Failed to update tab ${tab.id}:`, err))
     );
 
-    // If modType is replaceElements, also send messages for its children.
+    // If modType is replaceElements, also send messages for its children
     if (modType === 'replaceElements') {
       const children = Object.entries(TWITTER_MODS.replaceElements)
         .filter(([childKey, childConfig]) => childConfig.parent === key)
