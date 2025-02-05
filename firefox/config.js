@@ -95,6 +95,23 @@ const TWITTER_MODS = {
         'a[aria-label="Search and explore"][role="link"]'
       ]
     },
+    notifications: {
+      enabled: false,
+      description: "Hide Notifications Tab",
+      selectors: [
+        'a[data-testid="AppTabBar_Notifications_Link"]',
+        'a[aria-label*="Notifications"][role="link"]'
+      ]
+    },
+    messages: {
+      enabled: false,
+      description: "Hide Messages Tab",
+      selectors: [
+        'a[data-testid="AppTabBar_DirectMessage_Link"]',
+        'a[aria-label="Direct Messages"][role="link"]',
+        'a[href="/messages"]'
+      ]
+    },
     business: {
       enabled: false,
       description: "Hide Business Button",
