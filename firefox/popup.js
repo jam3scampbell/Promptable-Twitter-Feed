@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       {
         id: 'hideElements',
         title: 'Hide Elements',
-        filter: key => ['sidebar', 'trending', 'brokenSpacer'].includes(key)
+        filter: key => ['sidebar', 'trending', 'brokenSpacer', 'userInfo'].includes(key)
       },
       {
         id: 'hideElements',

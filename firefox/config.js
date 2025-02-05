@@ -50,6 +50,14 @@ const TWITTER_MODS = {
         'div[role="presentation"]:has(div[style*="background-color: rgb(75, 78, 82)"][style*="border-radius: 9999px"])'
       ]
     },
+	userInfo: {
+		enabled: false,
+		description: "Hide User Info in Timeline",
+		selectors: [
+			'div[data-testid="Tweet-User-Avatar"]',
+			'div[data-testid="User-Name"]',
+		]
+	},
     communities: {
       enabled: false,
       description: "Hide Communities Tab",
