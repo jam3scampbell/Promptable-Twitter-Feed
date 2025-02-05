@@ -127,6 +127,63 @@ const TWITTER_MODS = {
         'a[aria-label="Community Notes"][role="link"]',
         'a[href$="i/communitynotes"]'
       ]
+    },
+    replyCounts: {
+      enabled: false,
+      description: "Hide Reply Counts",
+      selectors: [
+        // Hide the number inside reply buttons
+        'button[data-testid="reply"] span[data-testid="app-text-transition-container"]',
+        // Backup using aria-label pattern
+        'button[aria-label*=" Replies"][role="button"] span[data-testid="app-text-transition-container"]'
+      ]
+    },
+    retweetCounts: {
+      enabled: false,
+      description: "Hide Repost Counts",
+      selectors: [
+        // Hide the number inside retweet buttons
+        'button[data-testid="retweet"] span[data-testid="app-text-transition-container"]',
+        // Backup using aria-label pattern
+        'button[aria-label*=" reposts"][role="button"] span[data-testid="app-text-transition-container"]'
+      ]
+    },
+    likeCounts: {
+      enabled: false,
+      description: "Hide Like Counts",
+      selectors: [
+        // Hide numbers in both liked and unliked states
+        'button[data-testid="like"] span[data-testid="app-text-transition-container"]',
+        'button[data-testid="unlike"] span[data-testid="app-text-transition-container"]',
+        // Backup using aria-label pattern
+        'button[aria-label*=" Likes"][role="button"] span[data-testid="app-text-transition-container"]'
+      ]
+    },
+    viewCounts: {
+      enabled: false,
+      description: "Hide View Counts",
+      selectors: [
+        // Target analytics link view counts
+        'a[href$="/analytics"] span[data-testid="app-text-transition-container"]',
+        // Backup using aria-label
+        'a[aria-label*="views"][aria-label*="View post analytics"] span[data-testid="app-text-transition-container"]',
+        // Additional backup using the specific view count icon
+        'a[href$="/analytics"]:has(svg path[d*="M8.75 21V3h2v18h-2z"]) span[data-testid="app-text-transition-container"]'
+      ]
+    }
+  },
+
+  // Engagement Metrics
+  hideMetrics: {
+    replyCounts: {
+      enabled: false,
+      description: "Hide Reply Counts",
+      selectors: [
+        // Hide the number inside reply buttons
+        'button[data-testid="reply"] span[data-testid="app-text-transition-container"]',
+        // Backup using aria-label pattern
+        'button[aria-label*=" Replies"][role="button"] span[data-testid="app-text-transition-container"]'
+      ]
     }
   },
 
