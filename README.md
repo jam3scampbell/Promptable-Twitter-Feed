@@ -1,12 +1,50 @@
-# 🦅 BlueRaven
+<h1 align="center">BlueRaven</h1>
 
-<img src="icon.png" alt="BlueRaven Logo" width="128" height="128" style="display: block; margin: 20px auto;">
-
-A simple and customizable browser extension that makes Twitter (sometimes known as X) look more like Twitter.
+<div align="center">
+<img src="icon.png" alt="BlueRaven Logo" width="128" height="128">
 
 More blue, more birds, more vibes, and less Grok.
+<p>
+    <a href="https://github.com/Nearcyan/BlueRaven/stargazers"
+        ><img
+            src="https://img.shields.io/github/stars/Nearcyan/BlueRaven?colorA=2c2837&colorB=c9cbff&style=for-the-badge&logo=starship style=flat-square"
+            alt="Repository's starts"
+    /></a>
+    <a href="https://github.com/Nearcyan/BlueRaven/issues"
+        ><img
+            src="https://img.shields.io/github/issues-raw/Nearcyan/BlueRaven?colorA=2c2837&colorB=f2cdcd&style=for-the-badge&logo=starship style=flat-square"
+            alt="Issues"
+    /></a>
+    <a href="https://github.com/Nearcyan/BlueRaven/blob/main/LICENSE"
+        ><img
+            src="https://img.shields.io/github/license/Nearcyan/BlueRaven?colorA=2c2837&colorB=b5e8e0&style=for-the-badge&logo=starship style=flat-square"
+            alt="License"
+    /></a><br />
+    <a href="https://github.com/Nearcyan/BlueRaven/commits/main"
+        ><img
+            src="https://img.shields.io/github/last-commit/Nearcyan/BlueRaven/main?colorA=2c2837&colorB=ddb6f2&style=for-the-badge&logo=starship style=flat-square"
+            alt="Latest commit"
+    /></a>
+    <a href="https://github.com/Nearcyan/BlueRaven"
+        ><img
+            src="https://img.shields.io/github/repo-size/Nearcyan/BlueRaven?colorA=2c2837&colorB=89DCEB&style=for-the-badge&logo=starship style=flat-square"
+            alt="GitHub repository size"
+    /></a>
+</p>
 
-## Contributions
+<br>
+
+<p align="center">
+A simple and customizable browser extension that makes Twitter (sometimes known as X) look more like Twitter.
+
+</p>
+
+https://user-images.githubusercontent.com/23431444/410151955-3a6bfd11-0ba6-4db0-b528-97d20a2238e8.mp4
+</div>
+
+---
+
+## 👥 Contributions
 
 Contributions are desired and welcome - **please test on both browsers beforehand!**
 
@@ -14,6 +52,7 @@ Note from the AI's assitant: 100% of this codebase was written by AI and I have 
 
 genAI can generally one-shot most features if you feed it the proper HTML - just show it the popup window and the config.js and then make sure you make edits for both browsers.
 
+---
 
 ## 🚀 Installation
 
@@ -41,4 +80,6 @@ genAI can generally one-shot most features if you feed it the proper HTML - just
 
 ---
 
+<div align="center">
 🩵
+</div>
