@@ -40,7 +40,9 @@ More blue, more birds, more vibes, and less Grok.
 https://user-images.githubusercontent.com/23431444/410151955-3a6bfd11-0ba6-4db0-b528-97d20a2238e8.mp4
 </div>
 
-## Contributions
+---
+
+## 👥 Contributions
 
 Contributions are desired and welcome - **please test on both browsers beforehand!**
 
@@ -48,6 +50,7 @@ Note from the AI's assitant: 100% of this codebase was written by AI and I have 
 
 genAI can generally one-shot most features if you feed it the proper HTML - just show it the popup window and the config.js and then make sure you make edits for both browsers.
 
+---
 
 ## 🚀 Installation
 
@@ -75,4 +78,6 @@ genAI can generally one-shot most features if you feed it the proper HTML - just
 
 ---
 
+<div align="center">
 🩵
+</div>
