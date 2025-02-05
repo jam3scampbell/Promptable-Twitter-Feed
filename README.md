@@ -1,4 +1,4 @@
-<h1 align="center">🦋 BlueRaven</h1>
+<h1 align="center">BlueRaven</h1>
 
 <div align="center">
 <img src="icon.png" alt="BlueRaven Logo" width="128" height="128">
@@ -35,6 +35,8 @@
 A simple and customizable browser extension that makes Twitter (sometimes known as X) look more like Twitter.
 
 More blue, more birds, more vibes, and less Grok.
+</p>
+</div>
 
 ## Contributions
 
