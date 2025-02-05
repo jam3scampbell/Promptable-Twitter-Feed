@@ -3,6 +3,7 @@
 <div align="center">
 <img src="icon.png" alt="BlueRaven Logo" width="128" height="128">
 
+More blue, more birds, more vibes, and less Grok.
 <p>
     <a href="https://github.com/Nearcyan/BlueRaven/stargazers"
         ><img
@@ -34,7 +35,6 @@
 <p align="center">
 A simple and customizable browser extension that makes Twitter (sometimes known as X) look more like Twitter.
 
-More blue, more birds, more vibes, and less Grok.
 </p>
 
 https://user-images.githubusercontent.com/23431444/410151955-3a6bfd11-0ba6-4db0-b528-97d20a2238e8.mp4
