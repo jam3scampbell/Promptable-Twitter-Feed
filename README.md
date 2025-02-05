@@ -36,6 +36,11 @@ A simple and customizable browser extension that makes Twitter (sometimes known 
 
 More blue, more birds, more vibes, and less Grok.
 </p>
+
+<video width="100%" controls>
+  <source src="https://private-user-images.githubusercontent.com/23431444/410151955-3a6bfd11-0ba6-4db0-b528-97d20a2238e8.mp4?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3Mzg3ODQ3NjIsIm5iZiI6MTczODc4NDQ2MiwicGF0aCI6Ii8yMzQzMTQ0NC80MTAxNTE5NTUtM2E2YmZkMTEtMGJhNi00ZGIwLWI1MjgtOTdkMjBhMjIzOGU4Lm1wND9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTAyMDUlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwMjA1VDE5NDEwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTg2YzRiMzcxMWM1OWI4NDY3Mzk4NWRlMzdiMDk3YmRmZTY0MDk0ODFlNWVmNmFiYjQ0M2EzMTU4YmMwMDdkYTAmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.8TTQdQkl5p7JQ9DhsSHxKrfNPzmbSp7qf5n7SUfZ6qE" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
 </div>
 
 ## Contributions
