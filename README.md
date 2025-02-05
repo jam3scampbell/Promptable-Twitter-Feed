@@ -1,6 +1,9 @@
-# 🦅 BlueRaven
+<h1 align="center">🦋 BlueRaven</h1>
 
-<p align="center">
+<div align="center">
+<img src="icon.png" alt="BlueRaven Logo" width="128" height="128">
+
+<p>
     <a href="https://github.com/Nearcyan/BlueRaven/stargazers"
         ><img
             src="https://img.shields.io/github/stars/Nearcyan/BlueRaven?colorA=2c2837&colorB=c9cbff&style=for-the-badge&logo=starship style=flat-square"
@@ -28,8 +31,7 @@
     /></a>
 </p>
 
-<img src="icon.png" alt="BlueRaven Logo" width="128" height="128" style="display: block; margin: 20px auto;">
-
+<p align="center">
 A simple and customizable browser extension that makes Twitter (sometimes known as X) look more like Twitter.
 
 More blue, more birds, more vibes, and less Grok.
