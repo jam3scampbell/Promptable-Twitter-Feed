@@ -23,17 +23,46 @@ document.addEventListener('DOMContentLoaded', async () => {
       { 
         id: 'hideElements', 
         title: 'Hide Side Tabs',
-        filter: key => ['communities', 'premium', 'jobs', 'articles', 'explore', 'notifications', 'messages', 'business', 'communityNotes'].includes(key)
+        filter: key => ['allTabs',
+                        'communities',
+                        'premium',
+                        'home',
+                        'lists',
+                        'bookmarks',
+                        'profile',
+                        'jobs',
+                        'articles',
+                        'explore',
+                        'notifications',
+                        'messages',
+                        'business',
+                        'communityNotes',
+                        'moreMenu'].includes(key)
       },
       {
         id: 'hideElements',
         title: 'Hide Elements',
-        filter: key => ['sidebar', 'trending', 'brokenSpacer', 'userInfo'].includes(key)
+        filter: key => ['leftSidebar',
+                        'rightSidebar',
+                        'bothSidebars',
+                        'trending',
+                        'brokenSpacer',
+                        'hidePremiumBadge',
+                        'messageDrawer',
+                        'userAvatar',
+                        'userName',
+                        'userHandle',
+                        'userNameAndHandle',
+                        'userInfo'].includes(key)
       },
       {
         id: 'hideElements',
         title: 'Engagement Metrics',
-        filter: key => ['replyCounts', 'retweetCounts', 'likeCounts', 'viewCounts'].includes(key)
+        filter: key => ['replyCounts',
+                        'retweetCounts',
+                        'likeCounts',
+                        'viewCounts',
+                        'bookmarkCounts'].includes(key)
       }
     ];
 
