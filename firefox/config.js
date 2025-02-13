@@ -24,7 +24,8 @@ const TWITTER_MODS = {
         'button[data-testid="grokImgGen"]',
         'div[role="presentation"]:has(button[data-testid="grokImgGen"])',
         'button[aria-label="Grok actions"][role="button"]',
-        'button[aria-label="Profile Summary"][role="button"]'
+        'button[aria-label="Profile Summary"][role="button"]',
+        'div[data-testid="GrokDrawer"]'
       ]
     },
     sidebar: {
