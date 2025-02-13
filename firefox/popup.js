@@ -33,7 +33,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       {
         id: 'hideElements',
         title: 'Engagement Metrics',
-        filter: key => ['replyCounts', 'retweetCounts', 'likeCounts', 'viewCounts'].includes(key)
+        filter: key => ['replyCounts',
+                        'retweetCounts',
+                        'likeCounts',
+                        'viewCounts',
+                        'bookmarkCounts'].includes(key)
       }
     ];
 

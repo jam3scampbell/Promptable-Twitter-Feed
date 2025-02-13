@@ -180,6 +180,13 @@ const TWITTER_MODS = {
         // Additional backup using the specific view count icon
         'a[href$="/analytics"]:has(svg path[d*="M8.75 21V3h2v18h-2z"]) span[data-testid="app-text-transition-container"]'
       ]
+    },
+    bookmarkCounts: {
+      enabled: false,
+      description: "Hide Bookmark Counts",
+      selectors: [
+        'button[data-testid="bookmark"] span[data-testid="app-text-transition-container"]',
+      ]
     }
   },
 
