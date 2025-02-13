@@ -59,6 +59,13 @@ const TWITTER_MODS = {
 			'div[data-testid="User-Name"]',
 		]
 	},
+    allTabs: {
+      enabled: false,
+      description: "Hide All Tabs",
+      selectors: [
+        'nav[role="navigation"][aria-label="Primary"]',
+      ]
+    },
     communities: {
       enabled: false,
       description: "Hide Communities Tab",
@@ -77,6 +84,36 @@ const TWITTER_MODS = {
         'a[data-testid="premium-hub-tab"]',
         'a[data-testid="premium-signup-tab"]',
         'a[aria-label="Premium"][role="link"]'
+      ]
+    },
+    home: {
+      enabled: false,
+      description: "Hide Home Tab",
+      selectors: [
+        'a[data-testid="AppTabBar_Home_Link"]',
+        'a[aria-label="Home"][role="link"]'
+      ]
+    },
+    lists: {
+      enabled: false,
+      description: "Hide Lists Tab",
+      selectors: [
+        'a[aria-label="Lists"][role="link"]'
+      ]
+    },
+    bookmarks: {
+      enabled: false,
+      description: "Hide Bookmarks Tab",
+      selectors: [
+        'a[aria-label="Bookmarks"][role="link"]'
+      ]
+    },
+    profile: {
+      enabled: false,
+      description: "Hide Profile Tab",
+      selectors: [
+        'a[data-testid="AppTabBar_Profile_Link"]',
+        'a[aria-label="Profile"][role="link"]'
       ]
     },
     jobs: {
@@ -135,6 +172,14 @@ const TWITTER_MODS = {
       selectors: [
         'a[aria-label="Community Notes"][role="link"]',
         'a[href$="i/communitynotes"]'
+      ]
+    },
+    moreMenu: {
+      enabled: false,
+      description: "Hide \"More\" Tab",
+      selectors: [
+        'button[data-testid="AppTabBar_More_Menu"]',
+        'button[aria-label="More menu items"][role="button"]'
       ]
     },
 
