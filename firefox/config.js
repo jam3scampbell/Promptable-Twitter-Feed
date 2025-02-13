@@ -28,10 +28,26 @@ const TWITTER_MODS = {
         'div[data-testid="GrokDrawer"]'
       ]
     },
-    sidebar: {
+    leftSidebar: {
       enabled: false,
-      description: "Hide Entire Sidebar",
+      description: "Hide Left Sidebar",
       selectors: [
+        'header[role="banner"]',
+      ]
+    },
+    rightSidebar: {
+      enabled: false,
+      description: "Hide Right Sidebar",
+      selectors: [
+        'div[data-testid="sidebarColumn"]',
+        'div[class*="css-175oi2r r-aqfbo4 r-1pi2tsx r-1xcajam r-1d2f490 r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af"]'
+      ]
+    },
+    bothSidebars: {
+      enabled: false,
+      description: "Hide Both Sidebars <keyboard ninja>",
+      selectors: [
+        'header[role="banner"]',
         'div[data-testid="sidebarColumn"]',
         'div[class*="css-175oi2r r-aqfbo4 r-1pi2tsx r-1xcajam r-1d2f490 r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af"]'
       ]
@@ -51,14 +67,57 @@ const TWITTER_MODS = {
         'div[role="presentation"]:has(div[style*="background-color: rgb(75, 78, 82)"][style*="border-radius: 9999px"])'
       ]
     },
-	userInfo: {
-		enabled: false,
-		description: "Hide User Info in Timeline",
-		selectors: [
-			'div[data-testid="Tweet-User-Avatar"]',
-			'div[data-testid="User-Name"]',
-		]
-	},
+    messageDrawer: {
+      enabled: false,
+      description: "Hide Messages Drawer",
+      selectors: [
+        'div[data-testid="DMDrawer"]',
+      ]
+    },
+    userInfo: {
+      enabled: false,
+      description: "Hide User Info in Timeline",
+      selectors: [
+        'div[data-testid="Tweet-User-Avatar"]',
+        'div[data-testid="User-Name"]',
+      ]
+    },
+    userAvatar: {
+      enabled: false,
+      description: "Hide User Avatar in Timeline",
+      selectors: [
+        'div[data-testid="Tweet-User-Avatar"]',
+      ]
+    },
+    userNameAndHandle: {
+      enabled: false,
+      description: "Hide User Name and Handle in Timeline",
+      selectors: [
+        'div[data-testid="User-Name"]',
+      ]
+    },
+    userName: {
+      enabled: false,
+      description: "Hide User Name in Timeline",
+      selectors: [
+        'div[data-testid="User-Name"] > div:first-child',
+      ]
+    },
+    userHandle: {
+      enabled: false,
+      description: "Hide User Handle in Timeline",
+      selectors: [
+        'div[data-testid="User-Name"] > div:nth-child(2) > div:first-child > div:first-child',
+      ]
+    },
+    hidePremiumBadge: {
+      enabled: false,
+      description: "Hide Premium Badge in Timeline",
+      selectors: [
+        'svg[aria-label="Verified account"][role="img"]',
+        'svg[data-testid="icon-verified"]',
+      ]
+    },
     allTabs: {
       enabled: false,
       description: "Hide All Tabs",
@@ -431,7 +490,25 @@ const TWITTER_MODS = {
         flex-direction: column !important;
         flex-shrink: 0 !important;
         -webkit-box-flex: 0 !important;
-      `
+       `
+    },
+    centerLayoutPro: {
+      enabled: false,
+      description: "Center Main Content <keyboard ninja>",
+      selectors: [
+        'main[role="main"]',
+      ],
+      styles: `
+        margin: 0 auto !important;
+        float: none !important;
+        width: 100% !important;
+        max-width: 600px !important;
+        flex-grow: 1 !important;
+        flex-basis: auto !important;
+        flex-direction: column !important;
+        flex-shrink: 0 !important;
+        -webkit-box-flex: 0 !important;
+       `
     },
     badgeColor: {
       enabled: false,
