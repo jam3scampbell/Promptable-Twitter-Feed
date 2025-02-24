@@ -63,7 +63,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         'retweetCounts',
                         'likeCounts',
                         'viewCounts',
-                        'bookmarkCounts'].includes(key)
+                        'bookmarkCounts',
+                        'shareCounts'].includes(key)
       }
     ];
 

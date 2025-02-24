@@ -292,6 +292,18 @@ const TWITTER_MODS = {
       selectors: [
         'button[data-testid="bookmark"] span[data-testid="app-text-transition-container"]',
       ]
+    },
+    shareCounts: {
+      enabled: false,
+      description: "Hide Share Button",
+      selectors: [
+        // Target the specific share button
+        'button[aria-label="Share post"][role="button"]',
+        // Backup using the specific SVG path
+        'button:has(svg path[d*="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21"])',
+        // Additional backup using the parent structure but being more specific
+        'div.css-175oi2r.r-18u37iz.r-1h0z5md:has(> button[aria-label="Share post"])'
+      ]
     }
   },
 
