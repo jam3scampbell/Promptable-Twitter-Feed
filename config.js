@@ -602,5 +602,22 @@ const TWITTER_MODS = {
         `
       }
     }
+  },
+  
+  // LLM Filtering - NEW SECTION
+  llmFiltering: {
+    enabled: false,
+    description: "LLM Tweet Filtering",
+    apiSettings: {
+      provider: "openai", // or "anthropic", etc.
+      apiKey: "", // User would need to provide this
+      model: "gpt-3.5-turbo", // Default model
+      maxTokens: 100
+    },
+    filterSettings: {
+      prompt: "Evaluate if this tweet is high quality and informative. Only respond with YES or NO.", // Default prompt
+      cacheResults: true,
+      filterTimelineTypes: ["for-you"] // Could also add "following", etc.
+    }
   }
-}; 
+};

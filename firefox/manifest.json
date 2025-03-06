@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
   "name": "BlueRaven",
-  "version": "1.0",
-  "description": "Modern theme for Twitter/X",
+  "version": "1.1",
+  "description": "Modern theme for Twitter/X with LLM tweet filtering",
   "browser_specific_settings": {
     "gecko": {
       "id": "blueraven@example.com"
@@ -26,7 +26,9 @@
   "permissions": [
     "storage",
     "*://twitter.com/*",
-    "*://x.com/*"
+    "*://x.com/*",
+    "*://api.openai.com/*",
+    "*://api.anthropic.com/*"
   ],
   "content_scripts": [{
     "matches": [
@@ -43,4 +45,4 @@
     "scripts": ["background.js"],
     "persistent": false
   }
-} 
+}

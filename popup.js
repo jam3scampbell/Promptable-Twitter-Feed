@@ -75,11 +75,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                         'viewCounts',
                         'bookmarkCounts',
                         'shareCounts'].includes(key)
-      }
+      },
+      { id: 'llmFiltering', title: 'LLM Filtering' }
     ];
 
     // Create sections in order
     sections.forEach(({ id, title, filter }) => {
+      if (id === 'llmFiltering') {
+        // Skip LLM here, it's handled separately
+        return;
+      }
+      
       if (TWITTER_MODS[id]) {
         const sectionDiv = document.createElement('div');
         
@@ -120,6 +126,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log(`Section ${id} not found in TWITTER_MODS`);
       }
     });
+    
+    // Initialize LLM filtering UI
+    initializeLLMFilteringUI();
   } catch (error) {
     console.error('Error in popup initialization:', error);
   }
@@ -210,4 +219,152 @@ async function updateSetting(modType, key, value) {
     console.error('Failed to update setting:', error);
     alert('Failed to update setting. Check console for details.');
   }
+}
+
+// Function to initialize LLM filtering UI
+function initializeLLMFilteringUI() {
+  const settingsDiv = document.getElementById('settings');
+  
+  // Add LLM filtering template to the page
+  const templateContent = document.getElementById('llm-ui-template').innerHTML;
+  const llmSection = document.createElement('div');
+  llmSection.innerHTML = templateContent;
+  settingsDiv.appendChild(llmSection);
+  
+  // Get LLM filtering settings from storage
+  browserAPI.storage.sync.get('settings', ({ settings = {} }) => {
+    const llmSettings = settings.llmFiltering || TWITTER_MODS.llmFiltering;
+    
+    // Initialize checkbox state
+    const enabledCheckbox = document.getElementById('llmFiltering-enabled');
+    enabledCheckbox.checked = llmSettings.enabled || false;
+    
+    // Show/hide config section based on enabled state
+    const configSection = document.getElementById('llm-config-section');
+    configSection.style.display = enabledCheckbox.checked ? 'block' : 'none';
+    
+    // Initialize form values
+    if (llmSettings.apiSettings) {
+      document.getElementById('llm-provider').value = llmSettings.apiSettings.provider || 'openai';
+      document.getElementById('llm-api-key').value = llmSettings.apiSettings.apiKey || '';
+      document.getElementById('llm-model').value = llmSettings.apiSettings.model || 'gpt-4o-mini-2024-07-18';
+    }
+    
+    if (llmSettings.filterSettings) {
+      document.getElementById('llm-prompt').value = llmSettings.filterSettings.prompt || '';
+      document.getElementById('cache-results').checked = llmSettings.filterSettings.cacheResults !== false;
+      
+      const timelineTypes = llmSettings.filterSettings.filterTimelineTypes || ['for-you'];
+      document.getElementById('filter-for-you').checked = timelineTypes.includes('for-you');
+      document.getElementById('filter-following').checked = timelineTypes.includes('following');
+    }
+    
+    // Set up event listeners
+    enabledCheckbox.addEventListener('change', (e) => {
+      configSection.style.display = e.target.checked ? 'block' : 'none';
+      updateLLMSettings();
+    });
+    
+    // Toggle API key visibility
+    const toggleVisibilityBtn = document.querySelector('.toggle-visibility');
+    toggleVisibilityBtn.addEventListener('click', () => {
+      const apiKeyInput = document.getElementById('llm-api-key');
+      if (apiKeyInput.type === 'password') {
+        apiKeyInput.type = 'text';
+        toggleVisibilityBtn.textContent = '🔒';
+      } else {
+        apiKeyInput.type = 'password';
+        toggleVisibilityBtn.textContent = '👁️';
+      }
+    });
+    
+    // Update provider-specific model options when provider changes
+    document.getElementById('llm-provider').addEventListener('change', (e) => {
+      const modelSelect = document.getElementById('llm-model');
+      modelSelect.innerHTML = '';
+      
+      if (e.target.value === 'openai') {
+        addOption(modelSelect, 'gpt-4o-mini-2024-07-18', 'GPT-4o Mini');
+        addOption(modelSelect, 'gpt-4o', 'GPT-4o');
+      } else if (e.target.value === 'anthropic') {
+        addOption(modelSelect, 'claude-3-7-sonnet-latest', 'Claude 3.7 Sonnet');
+        addOption(modelSelect, 'claude-3-5-latest', 'Claude 3.5 Haiku');
+      }
+    });
+    
+    // Save button
+    document.getElementById('save-llm-config').addEventListener('click', () => {
+      updateLLMSettings();
+      
+      // Show success message
+      const apiStatus = document.getElementById('api-status');
+      apiStatus.textContent = 'Configuration saved!';
+      apiStatus.className = 'api-status success';
+      
+      setTimeout(() => {
+        apiStatus.textContent = '';
+        apiStatus.className = 'api-status';
+      }, 3000);
+    });
+    
+    // Handle changes to other form elements
+    const formElements = configSection.querySelectorAll('input, select, textarea');
+    formElements.forEach(element => {
+      if (element.id !== 'llmFiltering-enabled') {
+        element.addEventListener('change', updateLLMSettings);
+      }
+    });
+  });
+}
+
+// Helper function to add options to select elements
+function addOption(selectElement, value, text) {
+  const option = document.createElement('option');
+  option.value = value;
+  option.textContent = text;
+  selectElement.appendChild(option);
+}
+
+// Function to update LLM settings in storage
+function updateLLMSettings() {
+  browserAPI.storage.sync.get('settings', ({ settings = {} }) => {
+    if (!settings.llmFiltering) {
+      settings.llmFiltering = {};
+    }
+    
+    // Update enabled state
+    settings.llmFiltering.enabled = document.getElementById('llmFiltering-enabled').checked;
+    
+    // Update API settings
+    settings.llmFiltering.apiSettings = {
+      provider: document.getElementById('llm-provider').value,
+      apiKey: document.getElementById('llm-api-key').value,
+      model: document.getElementById('llm-model').value,
+      maxTokens: 100 // Fixed value for now
+    };
+    
+    // Update filter settings
+    const timelineTypes = [];
+    if (document.getElementById('filter-for-you').checked) timelineTypes.push('for-you');
+    if (document.getElementById('filter-following').checked) timelineTypes.push('following');
+    
+    settings.llmFiltering.filterSettings = {
+      prompt: document.getElementById('llm-prompt').value,
+      cacheResults: document.getElementById('cache-results').checked,
+      filterTimelineTypes: timelineTypes
+    };
+    
+    // Save settings
+    browserAPI.storage.sync.set({ settings }, () => {
+      // Notify tabs to update
+      browserAPI.tabs.query({ url: ['*://twitter.com/*', '*://x.com/*'] }, (tabs) => {
+        tabs.forEach(tab => {
+          browserAPI.tabs.sendMessage(tab.id, {
+            type: 'refreshTheme',
+            modType: 'llmFiltering'
+          }).catch(err => console.error(`Failed to update tab ${tab.id}:`, err));
+        });
+      });
+    });
+  });
 }
