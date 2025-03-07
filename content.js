@@ -106,21 +106,50 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true; // Keep message channel open for async response
 });
 
-// Handle dynamic content
-const observer = new MutationObserver(() => {
-  injectTheme();
+// Handle dynamic content - throttled mutation observer to avoid excessive updates
+let throttleTimer = null;
+const observer = new MutationObserver((mutations) => {
+  // Only respond to significant DOM changes, not all mutations
+  const significantChange = mutations.some(mutation => {
+    // Check if this is a change to the timeline or main content area
+    if (mutation.target.tagName === 'ARTICLE' || 
+        mutation.target.getAttribute('data-testid') === 'primaryColumn' ||
+        mutation.target.role === 'region') {
+      return true;
+    }
+    
+    // Check for added nodes that might be important
+    return Array.from(mutation.addedNodes).some(node => 
+      node.nodeType === Node.ELEMENT_NODE && 
+      (node.tagName === 'ARTICLE' || 
+       node.querySelector('article[data-testid="tweet"]'))
+    );
+  });
+  
+  if (!significantChange) return;
+  
+  // Throttle updates to once per second
+  if (!throttleTimer) {
+    throttleTimer = setTimeout(() => {
+      injectTheme();
+      throttleTimer = null;
+    }, 1000);
+  }
 });
 
 // Start observing once DOM is ready
 if (document.body) {
-  observer.observe(document.body, {
+  // Only observe the main content area, not the entire body
+  const mainContent = document.querySelector('div[data-testid="primaryColumn"]') || document.body;
+  observer.observe(mainContent, {
     childList: true,
     subtree: true
   });
   injectTheme();
 } else {
   document.addEventListener('DOMContentLoaded', () => {
-    observer.observe(document.body, {
+    const mainContent = document.querySelector('div[data-testid="primaryColumn"]') || document.body;
+    observer.observe(mainContent, {
       childList: true,
       subtree: true
     });
@@ -237,7 +266,13 @@ const FeatureHandlers = {
   llmFiltering: (config, enabled) => {
     if (!enabled) return;
     
-    console.log('Setting up LLM tweet filtering with config:', config);
+    // Skip if we already have an active observer
+    if (activeObservers.has('llmFiltering')) {
+      return;
+    }
+    
+    // Only log once when setting up
+    console.log('Setting up LLM tweet filtering');
     
     // Set up tweet observer to catch new tweets as they load
     const tweetObserver = new MutationObserver(async (mutations) => {
@@ -275,6 +310,12 @@ const FeatureHandlers = {
           // Send to LLM for evaluation
           const shouldShow = await evaluateTweetWithLLM(tweetText, config);
           
+          // Log the decision with a snippet of the tweet text for debugging
+          const tweetPreview = tweetText.length > 50 ? tweetText.substring(0, 50) + '...' : tweetText;
+          const authorElement = tweetElement.querySelector('[data-testid="User-Name"]');
+          const authorName = authorElement ? authorElement.textContent.trim() : 'Unknown';
+          console.log(`LLM Filter: ${shouldShow ? '✅ ALLOWED' : '❌ FILTERED'} tweet by ${authorName}: "${tweetPreview}"`);
+          
           // Cache the result
           if (config.filterSettings.cacheResults) {
             tweetFilterCache.set(tweetId, shouldShow);
@@ -301,7 +342,7 @@ const FeatureHandlers = {
     
     if (timelineElement) {
       tweetObserver.observe(timelineElement, { childList: true, subtree: true });
-      console.log('LLM filtering observer attached to timeline');
+      console.log('LLM filtering observer attached to timeline'); // This only happens once now
     } else {
       console.warn('Timeline element not found for LLM filtering');
     }
@@ -393,9 +434,54 @@ function hashString(str) {
 
 // Hide a tweet that doesn't pass the filter
 function hideTweet(tweetElement) {
-  tweetElement.style.display = 'none';
+  // Store original display value for potential toggling in debug mode
+  tweetElement.dataset.originalDisplay = tweetElement.style.display || '';
+  
+  // Instead of completely hiding, make it compact with a visual indicator
+  // This makes it easier to see which tweets were filtered
+  tweetElement.style.maxHeight = '40px';
+  tweetElement.style.overflow = 'hidden';
+  tweetElement.style.opacity = '0.5';
+  tweetElement.style.position = 'relative';
+  tweetElement.style.backgroundImage = 'linear-gradient(rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.03))'; // Subtle overlay to indicate filtered
+  tweetElement.style.borderRadius = '16px';
+  tweetElement.style.cursor = 'pointer';
+  
   // Add a class for potential custom styling
   tweetElement.classList.add('llm-filtered');
+  
+  // Add a visual indicator that this tweet was filtered
+  const filterIndicator = document.createElement('div');
+  filterIndicator.textContent = '🤖 Filtered';
+  filterIndicator.style.position = 'absolute';
+  filterIndicator.style.top = '10px';
+  filterIndicator.style.left = '10px';
+  filterIndicator.style.backgroundColor = 'rgba(29, 155, 240, 0.9)'; // Twitter blue with opacity
+  filterIndicator.style.color = 'white';
+  filterIndicator.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  filterIndicator.style.padding = '2px 8px';
+  filterIndicator.style.borderRadius = '12px';
+  filterIndicator.style.fontSize = '12px';
+  filterIndicator.style.fontWeight = '500';
+  filterIndicator.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.15)';
+  filterIndicator.style.zIndex = '100';
+  filterIndicator.style.pointerEvents = 'none';
+  tweetElement.appendChild(filterIndicator);
+  
+  // Add click handler to toggle visibility (for debug purposes)
+  tweetElement.addEventListener('click', (e) => {
+    if (tweetElement.style.maxHeight === '40px') {
+      tweetElement.style.maxHeight = 'none';
+      tweetElement.style.opacity = '0.8';
+      filterIndicator.textContent = '🤖 Filtered (tap to collapse)';
+      filterIndicator.style.backgroundColor = 'rgba(29, 155, 240, 0.9)';
+      e.stopPropagation(); // Prevent tweet interaction
+    } else {
+      tweetElement.style.maxHeight = '40px';
+      tweetElement.style.opacity = '0.5';
+      filterIndicator.textContent = '🤖 Filtered';
+    }
+  }, true);
 }
 
 // Function to evaluate a tweet using the configured LLM
@@ -430,23 +516,31 @@ async function evaluateTweetWithLLM(tweetText, config) {
   }
 }
 
-
-
-// Leave parseResponse function as is
+// Parse the LLM response to determine if the tweet should be shown
 function parseResponse(response) {
-  if (!response) return true;
-
+  if (!response) {
+    return true;
+  }
+  
   // Convert to lowercase and trim for consistent comparison
   const normalizedResponse = response.toLowerCase().trim();
-
+  
   // Check for various forms of "no"
-  if (normalizedResponse.includes('no') ||
-      normalizedResponse === 'n' ||
-      normalizedResponse === 'false' ||
+  if (normalizedResponse.includes('no') || 
+      normalizedResponse === 'n' || 
+      normalizedResponse === 'false' || 
       normalizedResponse === '0') {
     return false;
   }
-
+  
+  // Check for explicit yes
+  if (normalizedResponse.includes('yes') || 
+      normalizedResponse === 'y' || 
+      normalizedResponse === 'true' || 
+      normalizedResponse === '1') {
+    return true;
+  }
+  
   // Default to showing the tweet if we're uncertain
   return true;
 }

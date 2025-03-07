@@ -120,6 +120,87 @@
     #settings {
       padding-bottom: 16px;
     }
+    
+    /* Additional styles for LLM filtering section */
+    .llm-section {
+      padding: 8px 16px;
+      background: var(--section-bg);
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .llm-config-row {
+      margin: 8px 0;
+    }
+    
+    .llm-config-row label {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    
+    .llm-config-row select,
+    .llm-config-row input[type="text"],
+    .llm-config-row input[type="password"],
+    .llm-config-row textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background: var(--section-bg);
+      color: var(--text-primary);
+      font-size: 13px;
+    }
+    
+    .llm-config-row textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    
+    .api-key-input {
+      position: relative;
+    }
+    
+    .toggle-visibility {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    
+    .save-button {
+      background: var(--twitter-blue);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background-color 0.2s;
+    }
+    
+    .save-button:hover {
+      background: var(--twitter-blue-hover);
+    }
+    
+    .api-status {
+      font-size: 12px;
+      margin-top: 4px;
+      color: var(--text-secondary);
+    }
+    
+    .api-status.success {
+      color: #00ba7c;
+    }
+    
+    .api-status.error {
+      color: #f4212e;
+    }
   </style>
 </head>
 <body>
@@ -128,7 +209,73 @@
     <h1>BlueRaven</h1>
   </div>
   <div id="settings"></div>
+  
+  <!-- Template for LLM UI section -->
+  <script id="llm-ui-template" type="text/template">
+    <div class="section-title">LLM Tweet Filtering</div>
+    
+    <div class="mod-item">
+      <input type="checkbox" id="llmFiltering-enabled" />
+      <label for="llmFiltering-enabled">Enable LLM Tweet Filtering</label>
+    </div>
+    
+    <div id="llm-config-section" class="llm-section" style="display: none;">
+      <div class="llm-config-row">
+        <label for="llm-provider">LLM Provider</label>
+        <select id="llm-provider">
+          <option value="openai">OpenAI</option>
+          <option value="anthropic">Anthropic Claude</option>
+        </select>
+      </div>
+      
+      <div class="llm-config-row">
+        <label for="llm-api-key">API Key</label>
+        <div class="api-key-input">
+          <input type="password" id="llm-api-key" placeholder="Enter your API key" />
+          <button class="toggle-visibility" type="button">👁️</button>
+        </div>
+        <div id="api-status" class="api-status"></div>
+      </div>
+      
+      <div class="llm-config-row">
+        <label for="llm-model">Model</label>
+        <select id="llm-model">
+          <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+          <option value="gpt-4">GPT-4</option>
+          <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+          <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+        </select>
+      </div>
+      
+      <div class="llm-config-row">
+        <label for="llm-prompt">Filter Prompt</label>
+        <textarea id="llm-prompt" placeholder="Instructions for the LLM on how to evaluate tweets">Evaluate if this tweet is high quality and informative. Only respond with YES or NO.</textarea>
+      </div>
+      
+      <div class="llm-config-row">
+        <label>Timeline Types to Filter</label>
+        <div class="mod-item">
+          <input type="checkbox" id="filter-for-you" checked />
+          <label for="filter-for-you">For You</label>
+        </div>
+        <div class="mod-item">
+          <input type="checkbox" id="filter-following" />
+          <label for="filter-following">Following</label>
+        </div>
+      </div>
+      
+      <div class="llm-config-row">
+        <div class="mod-item">
+          <input type="checkbox" id="cache-results" checked />
+          <label for="cache-results">Cache results (reduces API calls)</label>
+        </div>
+      </div>
+      
+      <button id="save-llm-config" class="save-button">Save Configuration</button>
+    </div>
+  </script>
+  
   <script src="config.js"></script>
   <script src="popup.js"></script>
 </body>
-</html> 
+</html>
