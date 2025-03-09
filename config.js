@@ -611,13 +611,22 @@ const TWITTER_MODS = {
     apiSettings: {
       provider: "openai", // or "anthropic", etc.
       apiKey: "", // User would need to provide this
-      model: "gpt-3.5-turbo", // Default model
+      model: "gpt-4o-mini", // Default model
       maxTokens: 100
     },
     filterSettings: {
-      prompt: "Evaluate if this tweet is high quality and informative. Only respond with YES or NO.", // Default prompt
+      prompt: "Evaluate if this tweet is high quality and informative. Consider both the text content and any images. Only respond with YES or NO.", // Default prompt
       cacheResults: true,
-      filterTimelineTypes: ["for-you"] // Could also add "following", etc.
+      filterTimelineTypes: ["for-you"], // Could also add "following", etc.
+
+      // Auto-filter options
+      filterImageOnly: false,
+      filterVideoOnly: false,
+      filterAllMediaOnly: false,
+
+      // Multimodal processing options
+      useMultimodal: true,
+      lowBandwidthMode: false
     }
   }
 };

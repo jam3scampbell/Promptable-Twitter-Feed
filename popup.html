@@ -270,6 +270,34 @@
           <label for="cache-results">Cache results (reduces API calls)</label>
         </div>
       </div>
+
+      <div class="llm-config-row">
+      <label>Auto-Filter Options</label>
+      <div class="mod-item">
+        <input type="checkbox" id="filter-image-only" />
+        <label for="filter-image-only">Auto-filter tweets with only images (no text)</label>
+      </div>
+      <div class="mod-item">
+        <input type="checkbox" id="filter-video-only" />
+        <label for="filter-video-only">Auto-filter tweets with only videos (no text)</label>
+      </div>
+      <div class="mod-item">
+        <input type="checkbox" id="filter-all-media-only" />
+        <label for="filter-all-media-only">Auto-filter all media-only tweets (no text)</label>
+      </div>
+    </div>
+
+    <div class="llm-config-row">
+      <label>Multimodal Settings</label>
+      <div class="mod-item">
+        <input type="checkbox" id="use-multimodal" checked />
+        <label for="use-multimodal">Enable multimodal processing (images and video thumbnails)</label>
+      </div>
+      <div class="mod-item">
+        <input type="checkbox" id="low-bandwidth-mode" />
+        <label for="low-bandwidth-mode">Low bandwidth mode (reduce image quality to save costs)</label>
+      </div>
+    </div>
       
       <button id="save-llm-config" class="save-button">Save Configuration</button>
     </div>

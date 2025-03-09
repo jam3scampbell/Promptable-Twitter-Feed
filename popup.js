@@ -257,6 +257,21 @@ function initializeLLMFilteringUI() {
       const timelineTypes = llmSettings.filterSettings.filterTimelineTypes || ['for-you'];
       document.getElementById('filter-for-you').checked = timelineTypes.includes('for-you');
       document.getElementById('filter-following').checked = timelineTypes.includes('following');
+
+
+      // Initialize auto-filter options
+      document.getElementById('filter-image-only').checked =
+        llmSettings.filterSettings.filterImageOnly === true;
+      document.getElementById('filter-video-only').checked =
+        llmSettings.filterSettings.filterVideoOnly === true;
+      document.getElementById('filter-all-media-only').checked =
+        llmSettings.filterSettings.filterAllMediaOnly === true;
+
+      // Initialize multimodal settings
+      document.getElementById('use-multimodal').checked =
+        llmSettings.filterSettings.useMultimodal !== false; // Default to true
+      document.getElementById('low-bandwidth-mode').checked =
+        llmSettings.filterSettings.lowBandwidthMode === true;
     }
     
     // Set up event listeners
@@ -351,7 +366,16 @@ function updateLLMSettings() {
     settings.llmFiltering.filterSettings = {
       prompt: document.getElementById('llm-prompt').value,
       cacheResults: document.getElementById('cache-results').checked,
-      filterTimelineTypes: timelineTypes
+      filterTimelineTypes: timelineTypes,
+
+      // Add auto-filter options
+      filterImageOnly: document.getElementById('filter-image-only').checked,
+      filterVideoOnly: document.getElementById('filter-video-only').checked,
+      filterAllMediaOnly: document.getElementById('filter-all-media-only').checked,
+
+      // Add multimodal settings
+      useMultimodal: document.getElementById('use-multimodal').checked,
+      lowBandwidthMode: document.getElementById('low-bandwidth-mode').checked
     };
     
     // Save settings

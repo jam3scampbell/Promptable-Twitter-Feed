@@ -286,18 +286,18 @@ const FeatureHandlers = {
       
       // Get all new tweet elements
       const tweetElements = findNewTweetElements(mutations);
-      
+      // Process tweet elements
       for (const tweetElement of tweetElements) {
         // Skip if we've already processed this tweet
         if (tweetElement.dataset.llmProcessed) continue;
-        
+
         // Mark as processed to avoid duplicate API calls
         tweetElement.dataset.llmProcessed = "pending";
-        
-        // Try to get from cache first if enabled
-        const tweetText = extractTweetText(tweetElement);
+
+        // Get tweet ID for caching
         const tweetId = extractTweetId(tweetElement);
-        
+
+        // Try to get from cache first if enabled
         if (config.filterSettings.cacheResults && tweetFilterCache.has(tweetId)) {
           const shouldShow = tweetFilterCache.get(tweetId);
           if (!shouldShow) {
@@ -305,27 +305,32 @@ const FeatureHandlers = {
           }
           continue;
         }
-        
+
         try {
-          // Send to LLM for evaluation
-          const shouldShow = await evaluateTweetWithLLM(tweetText, config);
-          
-          // Log the decision with a snippet of the tweet text for debugging
-          const tweetPreview = tweetText.length > 50 ? tweetText.substring(0, 50) + '...' : tweetText;
-          const authorElement = tweetElement.querySelector('[data-testid="User-Name"]');
-          const authorName = authorElement ? authorElement.textContent.trim() : 'Unknown';
-          console.log(`LLM Filter: ${shouldShow ? '✅ ALLOWED' : '❌ FILTERED'} tweet by ${authorName}: "${tweetPreview}"`);
-          
+          // Evaluate the tweet with the LLM
+          const shouldShow = await evaluateTweetWithLLM(tweetElement, config);
+
+          // Extract content for logging
+          const tweetContent = extractTweetContent(tweetElement);
+          const contentType = tweetContent.contentType;
+          const tweetPreview = tweetContent.text.length > 50 ?
+            tweetContent.text.substring(0, 50) + '...' : tweetContent.text;
+
+          // Log the decision with content info
+          console.log(
+            `LLM Filter: ${shouldShow ? '✅ ALLOWED' : '❌ FILTERED'} ${contentType} tweet by ${tweetContent.author.name}: "${tweetPreview}"`
+          );
+
           // Cache the result
           if (config.filterSettings.cacheResults) {
             tweetFilterCache.set(tweetId, shouldShow);
           }
-          
+
           // Hide tweet if it doesn't pass the filter
           if (!shouldShow) {
             hideTweet(tweetElement);
           }
-          
+
           // Mark as fully processed
           tweetElement.dataset.llmProcessed = "complete";
         } catch (error) {
@@ -335,7 +340,7 @@ const FeatureHandlers = {
         }
       }
     });
-    
+
     // Start observing the timeline
     const timelineElement = document.querySelector('div[aria-label="Timeline: Your Home Timeline"]') || 
                             document.querySelector('section[role="region"][aria-label*="Timeline"]');
@@ -485,12 +490,42 @@ function hideTweet(tweetElement) {
 }
 
 // Function to evaluate a tweet using the configured LLM
-async function evaluateTweetWithLLM(tweetText, config) {
-  if (!tweetText || tweetText.trim() === '') {
-    return true; // Allow empty tweets through
+
+async function evaluateTweetWithLLM(tweetElement, config) {
+  // Extract all content from the tweet
+  const tweetContent = extractTweetContent(tweetElement);
+  
+  // Apply automatic filters if configured
+  if (shouldAutoFilter(tweetContent, config)) {
+    return false; // Automatically filter out based on content type
+  }
+  
+  // For empty tweets (no text, images, or video), allow through
+  if (tweetContent.contentType === 'empty') {
+    return true;
   }
   
   try {
+    // Process images if this is a multimodal-enabled model and tweet has images
+    if (isMultimodalModel(config.apiSettings.model) && 
+        (tweetContent.hasImages || (tweetContent.hasVideo && tweetContent.videoThumbnail))) {
+      
+      // Convert images to base64
+      if (tweetContent.hasImages) {
+        const base64Images = await Promise.all(
+          tweetContent.images.map(async url => await getImageAsBase64(url))
+        );
+        // Filter out any failed conversions
+        tweetContent.images = base64Images.filter(img => img !== null);
+      }
+      
+      // Convert video thumbnail to base64 if available
+      if (tweetContent.hasVideo && tweetContent.videoThumbnail && 
+          tweetContent.videoThumbnail !== "VIDEO_WITHOUT_THUMBNAIL") {
+        tweetContent.videoThumbnail = await getImageAsBase64(tweetContent.videoThumbnail);
+      }
+    }
+    
     // Send message to background script to make the API call
     const response = await chrome.runtime.sendMessage({
       type: 'llmApiRequest',
@@ -499,7 +534,7 @@ async function evaluateTweetWithLLM(tweetText, config) {
         apiKey: config.apiSettings.apiKey,
         model: config.apiSettings.model,
         prompt: config.filterSettings.prompt,
-        tweetText: tweetText
+        tweetContent: tweetContent
       }
     });
     
@@ -515,6 +550,49 @@ async function evaluateTweetWithLLM(tweetText, config) {
     return true; // Default to showing tweet on error
   }
 }
+
+// Determine if a tweet should be automatically filtered based on content type
+function shouldAutoFilter(tweetContent, config) {
+  // Check for auto-filtering settings
+  const filterSettings = config.filterSettings || {};
+  
+  // Auto-filter image-only tweets if configured
+  if (filterSettings.filterImageOnly && tweetContent.contentType === 'image_only') {
+    return true;
+  }
+  
+  // Auto-filter video-only tweets if configured
+  if (filterSettings.filterVideoOnly && tweetContent.contentType === 'video_only') {
+    return true;
+  }
+  
+  // Auto-filter all media-only posts (no text)
+  if (filterSettings.filterAllMediaOnly && 
+      (tweetContent.contentType === 'image_only' || tweetContent.contentType === 'video_only')) {
+    return true;
+  }
+  
+  return false;
+}
+
+// Check if a model supports multimodal inputs
+function isMultimodalModel(model) {
+  // List of multimodal-capable models
+  const multimodalModels = [
+    // OpenAI models
+    'gpt-4-vision', 'gpt-4o', 'gpt-4o-mini',
+    // Claude models
+    'claude-3', 'claude-3-5', 'claude-3-7'
+  ];
+  
+  // Check if model name contains any of the multimodal model strings
+  return multimodalModels.some(mmModel => model.includes(mmModel));
+}
+
+
+
+
+
 
 // Parse the LLM response to determine if the tweet should be shown
 function parseResponse(response) {
@@ -543,4 +621,141 @@ function parseResponse(response) {
   
   // Default to showing the tweet if we're uncertain
   return true;
+}
+
+
+// Extract all content from a tweet element
+function extractTweetContent(tweetElement) {
+  // Get basic text content
+  const tweetText = extractTweetText(tweetElement);
+
+  // Get author information
+  const authorInfo = extractAuthorInfo(tweetElement);
+
+  // Get images
+  const images = extractTweetImages(tweetElement);
+
+  // Get video thumbnail if available
+  const videoThumbnail = extractVideoThumbnail(tweetElement);
+
+  // Determine tweet content type
+  const contentType = determineTweetType(tweetText, images, videoThumbnail);
+
+  return {
+    text: tweetText,
+    author: authorInfo,
+    images: images,
+    videoThumbnail: videoThumbnail,
+    contentType: contentType,
+    hasText: tweetText.trim().length > 0,
+    hasImages: images.length > 0,
+    hasVideo: videoThumbnail !== null
+  };
+}
+
+// Extract author information from a tweet
+function extractAuthorInfo(tweetElement) {
+  const authorElement = tweetElement.querySelector('[data-testid="User-Name"]');
+  if (!authorElement) return { name: 'Unknown', handle: '', verified: false };
+
+  // Get user name (first child element)
+  const nameElement = authorElement.querySelector('div:first-child');
+  const name = nameElement ? nameElement.textContent.trim() : 'Unknown';
+
+  // Get handle (in second child element)
+  const handleElement = authorElement.querySelector('div:nth-child(2) > div:first-child > div:first-child');
+  const handle = handleElement ? handleElement.textContent.trim() : '';
+
+  // Check if verified (look for verified icon)
+  const verifiedBadge = authorElement.querySelector('svg[aria-label="Verified account"], svg[data-testid="icon-verified"]');
+  const verified = !!verifiedBadge;
+
+  return { name, handle, verified };
+}
+
+// Extract images from a tweet
+function extractTweetImages(tweetElement) {
+  const images = [];
+
+  // Find image containers
+  const imageContainers = tweetElement.querySelectorAll('div[data-testid="tweetPhoto"]');
+
+  imageContainers.forEach(container => {
+    const img = container.querySelector('img[src*="https"]');
+    if (img && img.src) {
+      // Get the highest resolution version by removing size constraints
+      let highResUrl = img.src;
+
+      // Twitter image URLs often end with ?format=jpg&name=small
+      // We want to get the original size when possible
+      if (highResUrl.includes('?')) {
+        // Extract base URL without query parameters
+        const baseUrl = highResUrl.split('?')[0];
+        // Add back format but request original size
+        highResUrl = `${baseUrl}?format=jpg&name=orig`;
+      }
+
+      images.push(highResUrl);
+    }
+  });
+
+  return images;
+}
+
+// Extract video thumbnail from a tweet (if present)
+function extractVideoThumbnail(tweetElement) {
+  // Check for video player
+  const videoContainer = tweetElement.querySelector('div[data-testid="videoPlayer"]');
+  if (!videoContainer) return null;
+
+  // Try to find the poster/thumbnail image
+  const posterImage = videoContainer.querySelector('img[src*="https"]');
+  if (posterImage && posterImage.src) {
+    return posterImage.src;
+  }
+
+  // Fallback method - look for any image inside the video container
+  const anyImage = videoContainer.querySelector('img[src*="https"]');
+  if (anyImage && anyImage.src) {
+    return anyImage.src;
+  }
+
+  // If we found a video but no thumbnail, return a placeholder
+  return videoContainer ? "VIDEO_WITHOUT_THUMBNAIL" : null;
+}
+
+// Determine the type of the tweet based on content
+function determineTweetType(text, images, videoThumbnail) {
+  const hasText = text.trim().length > 0;
+  const hasImages = images.length > 0;
+  const hasVideo = videoThumbnail !== null;
+
+  if (hasVideo) {
+    return hasText ? 'text_and_video' : 'video_only';
+  } else if (hasImages) {
+    return hasText ? 'text_and_images' : 'image_only';
+  } else {
+    return hasText ? 'text_only' : 'empty';
+  }
+}
+
+// Convert image URL to base64 data URL for API submission
+async function getImageAsBase64(url) {
+  try {
+    // Send message to background script to fetch the image
+    // This avoids CORS issues
+    const response = await chrome.runtime.sendMessage({
+      type: 'fetchImage',
+      data: { url }
+    });
+
+    if (response && response.success) {
+      return response.data;
+    }
+
+    throw new Error(response?.error || 'Failed to convert image to base64');
+  } catch (error) {
+    console.error('Error converting image to base64:', error);
+    return null;
+  }
 }
