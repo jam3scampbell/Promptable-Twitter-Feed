@@ -626,7 +626,10 @@ const TWITTER_MODS = {
 
       // Multimodal processing options
       useMultimodal: true,
-      lowBandwidthMode: false
+      lowBandwidthMode: false,
+      
+      // Display options
+      completelyHideFiltered: false // Option to completely hide filtered tweets instead of showing minimized
     }
   }
 };

@@ -272,6 +272,10 @@ function initializeLLMFilteringUI() {
         llmSettings.filterSettings.useMultimodal !== false; // Default to true
       document.getElementById('low-bandwidth-mode').checked =
         llmSettings.filterSettings.lowBandwidthMode === true;
+        
+      // Initialize display options
+      document.getElementById('completely-hide-filtered').checked =
+        llmSettings.filterSettings.completelyHideFiltered === true;
     }
     
     // Set up event listeners
@@ -375,7 +379,10 @@ function updateLLMSettings() {
 
       // Add multimodal settings
       useMultimodal: document.getElementById('use-multimodal').checked,
-      lowBandwidthMode: document.getElementById('low-bandwidth-mode').checked
+      lowBandwidthMode: document.getElementById('low-bandwidth-mode').checked,
+      
+      // Add display options
+      completelyHideFiltered: document.getElementById('completely-hide-filtered').checked
     };
     
     // Save settings

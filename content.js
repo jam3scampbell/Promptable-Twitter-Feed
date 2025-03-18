@@ -438,12 +438,22 @@ function hashString(str) {
 }
 
 // Hide a tweet that doesn't pass the filter
-function hideTweet(tweetElement) {
-  // Store original display value for potential toggling in debug mode
+async function hideTweet(tweetElement) {
+  // Get settings to check if we should completely hide the tweet
+  const { settings } = await chrome.storage.sync.get('settings');
+  const completelyHideFiltered = settings?.llmFiltering?.filterSettings?.completelyHideFiltered === true;
+  
+  if (completelyHideFiltered) {
+    // Completely hide the tweet
+    tweetElement.style.display = 'none';
+    tweetElement.classList.add('llm-filtered-hidden');
+    return;
+  }
+  
+  // Store original display value for potential toggling
   tweetElement.dataset.originalDisplay = tweetElement.style.display || '';
   
   // Instead of completely hiding, make it compact with a visual indicator
-  // This makes it easier to see which tweets were filtered
   tweetElement.style.maxHeight = '40px';
   tweetElement.style.overflow = 'hidden';
   tweetElement.style.opacity = '0.5';
@@ -458,6 +468,7 @@ function hideTweet(tweetElement) {
   // Add a visual indicator that this tweet was filtered
   const filterIndicator = document.createElement('div');
   filterIndicator.textContent = '🤖 Filtered';
+  filterIndicator.className = 'filter-indicator';
   filterIndicator.style.position = 'absolute';
   filterIndicator.style.top = '10px';
   filterIndicator.style.left = '10px';
@@ -473,20 +484,62 @@ function hideTweet(tweetElement) {
   filterIndicator.style.pointerEvents = 'none';
   tweetElement.appendChild(filterIndicator);
   
-  // Add click handler to toggle visibility (for debug purposes)
-  tweetElement.addEventListener('click', (e) => {
-    if (tweetElement.style.maxHeight === '40px') {
-      tweetElement.style.maxHeight = 'none';
-      tweetElement.style.opacity = '0.8';
-      filterIndicator.textContent = '🤖 Filtered (tap to collapse)';
-      filterIndicator.style.backgroundColor = 'rgba(29, 155, 240, 0.9)';
-      e.stopPropagation(); // Prevent tweet interaction
-    } else {
-      tweetElement.style.maxHeight = '40px';
-      tweetElement.style.opacity = '0.5';
+  // Add a minimize button that stays in expanded view
+  const minimizeButton = document.createElement('div');
+  minimizeButton.className = 'minimize-button';
+  minimizeButton.textContent = '🔼 Minimize';
+  minimizeButton.style.position = 'absolute';
+  minimizeButton.style.bottom = '10px';
+  minimizeButton.style.right = '10px';
+  minimizeButton.style.backgroundColor = 'rgba(29, 155, 240, 0.9)';
+  minimizeButton.style.color = 'white';
+  minimizeButton.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  minimizeButton.style.padding = '2px 8px';
+  minimizeButton.style.borderRadius = '12px';
+  minimizeButton.style.fontSize = '12px';
+  minimizeButton.style.fontWeight = '500';
+  minimizeButton.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.15)';
+  minimizeButton.style.zIndex = '100';
+  minimizeButton.style.display = 'none'; // Initially hidden
+  minimizeButton.style.cursor = 'pointer';
+  tweetElement.appendChild(minimizeButton);
+  
+  // Add click handler to toggle visibility
+  tweetElement.addEventListener('click', function toggleTweet(e) {
+    // Don't trigger if clicking directly on the minimize button or like button
+    if (e.target === minimizeButton ||
+        e.target.closest('button[data-testid="like"]') ||
+        e.target.closest('button[data-testid="unlike"]')) {
+      return;
+    }
+    
+    if (this.style.maxHeight === '40px') {
+      // Expand
+      this.style.maxHeight = 'none';
+      this.style.opacity = '0.8';
       filterIndicator.textContent = '🤖 Filtered';
+      minimizeButton.style.display = 'block';
+      e.stopPropagation(); // Prevent tweet interaction on first click
     }
   }, true);
+  
+  // Add click handler specifically for the minimize button
+  minimizeButton.addEventListener('click', (e) => {
+    // Minimize
+    tweetElement.style.maxHeight = '40px';
+    tweetElement.style.opacity = '0.5';
+    filterIndicator.textContent = '🤖 Filtered';
+    minimizeButton.style.display = 'none';
+    e.stopPropagation(); // Prevent the tweet's click handler from firing
+  });
+  
+  // Prevent like buttons from auto-minimizing the tweet
+  const likeButtons = tweetElement.querySelectorAll('button[data-testid="like"], button[data-testid="unlike"]');
+  likeButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent the tweet's click handler from firing
+    }, true);
+  });
 }
 
 // Function to evaluate a tweet using the configured LLM

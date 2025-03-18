@@ -190,12 +190,14 @@
     
     .api-status {
       font-size: 12px;
-      margin-top: 4px;
+      margin-top: 8px;
+      text-align: center;
       color: var(--text-secondary);
     }
     
     .api-status.success {
       color: #00ba7c;
+      font-weight: 500;
     }
     
     .api-status.error {
@@ -234,7 +236,6 @@
           <input type="password" id="llm-api-key" placeholder="Enter your API key" />
           <button class="toggle-visibility" type="button">👁️</button>
         </div>
-        <div id="api-status" class="api-status"></div>
       </div>
       
       <div class="llm-config-row">
@@ -298,8 +299,17 @@
         <label for="low-bandwidth-mode">Low bandwidth mode (reduce image quality to save costs)</label>
       </div>
     </div>
+    
+    <div class="llm-config-row">
+      <label>Display Options</label>
+      <div class="mod-item">
+        <input type="checkbox" id="completely-hide-filtered" />
+        <label for="completely-hide-filtered">Completely hide filtered tweets (instead of showing minimized)</label>
+      </div>
+    </div>
       
       <button id="save-llm-config" class="save-button">Save Configuration</button>
+      <div id="api-status" class="api-status"></div>
     </div>
   </script>
   
