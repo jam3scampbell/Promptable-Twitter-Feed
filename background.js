@@ -27,7 +27,9 @@ chrome.runtime.onInstalled.addListener(async () => {
         filterSettings: {
           prompt: "Evaluate if this tweet is high quality and informative. Only respond with YES or NO.",
           cacheResults: true,
-          filterTimelineTypes: ["for-you"]
+          filterTimelineTypes: ["for-you"],
+          whitelist: [], // Array of account handles to always show
+          filterMode: "normal" // "normal", "whitelist-only", "whitelist-bypass"
         }
       }
     };

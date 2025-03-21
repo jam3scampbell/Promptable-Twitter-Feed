@@ -203,6 +203,103 @@
     .api-status.error {
       color: #f4212e;
     }
+    
+    /* Whitelist UI styles */
+    .whitelist-control {
+      margin-bottom: 12px;
+    }
+    
+    .whitelist-control select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background: var(--section-bg);
+      color: var(--text-primary);
+      font-size: 13px;
+    }
+    
+    .whitelist-input-container {
+      display: flex;
+      margin-bottom: 8px;
+    }
+    
+    .whitelist-input-container input {
+      flex-grow: 1;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-right: none;
+      border-radius: 4px 0 0 4px;
+      background: var(--section-bg);
+      color: var(--text-primary);
+      font-size: 13px;
+    }
+    
+    .whitelist-button {
+      background: var(--twitter-blue);
+      color: white;
+      border: none;
+      border-radius: 0 4px 4px 0;
+      padding: 0 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    .whitelist-button:hover {
+      background: var(--twitter-blue-hover);
+    }
+    
+    .whitelist-list {
+      margin-top: 8px;
+    }
+    
+    .whitelist-list label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    
+    .whitelist-items {
+      max-height: 120px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 8px;
+      background: var(--section-bg);
+    }
+    
+    .whitelist-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 8px;
+      background: var(--section-bg);
+      border-radius: 4px;
+      margin-bottom: 4px;
+    }
+    
+    .whitelist-item:hover {
+      background: var(--hover-bg);
+    }
+    
+    .whitelist-item .handle {
+      font-weight: 500;
+    }
+    
+    .whitelist-item .remove {
+      color: #f4212e;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    
+    .whitelist-empty {
+      color: var(--text-secondary);
+      font-style: italic;
+      text-align: center;
+      padding: 8px;
+    }
   </style>
 </head>
 <body>
@@ -305,6 +402,29 @@
       <div class="mod-item">
         <input type="checkbox" id="completely-hide-filtered" />
         <label for="completely-hide-filtered">Completely hide filtered tweets (instead of showing minimized)</label>
+      </div>
+    </div>
+    
+    <div class="llm-config-row">
+      <label>Whitelist Settings</label>
+      <div class="whitelist-control">
+        <select id="filter-mode">
+          <option value="normal">Normal filtering (show whitelisted accounts)</option>
+          <option value="whitelist-bypass">Show whitelisted accounts, filter others using LLM</option>
+          <option value="whitelist-only">Only show whitelisted accounts, hide everything else</option>
+        </select>
+      </div>
+      
+      <div class="whitelist-manager">
+        <div class="whitelist-input-container">
+          <input type="text" id="whitelist-input" placeholder="Enter Twitter handle (e.g., elonmusk)" />
+          <button id="add-to-whitelist" class="whitelist-button">Add</button>
+        </div>
+        
+        <div class="whitelist-list">
+          <label>Whitelisted Accounts:</label>
+          <div id="whitelist-items" class="whitelist-items"></div>
+        </div>
       </div>
     </div>
       

@@ -504,10 +504,31 @@ async function hideTweet(tweetElement) {
   minimizeButton.style.cursor = 'pointer';
   tweetElement.appendChild(minimizeButton);
   
+  // Add whitelist button
+  const whitelistButton = document.createElement('div');
+  whitelistButton.className = 'whitelist-button';
+  whitelistButton.textContent = '⭐ Add to Whitelist';
+  whitelistButton.style.position = 'absolute';
+  whitelistButton.style.bottom = '10px';
+  whitelistButton.style.left = '10px';
+  whitelistButton.style.backgroundColor = 'rgba(29, 155, 240, 0.9)';
+  whitelistButton.style.color = 'white';
+  whitelistButton.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  whitelistButton.style.padding = '2px 8px';
+  whitelistButton.style.borderRadius = '12px';
+  whitelistButton.style.fontSize = '12px';
+  whitelistButton.style.fontWeight = '500';
+  whitelistButton.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.15)';
+  whitelistButton.style.zIndex = '100';
+  whitelistButton.style.display = 'none'; // Initially hidden
+  whitelistButton.style.cursor = 'pointer';
+  tweetElement.appendChild(whitelistButton);
+  
   // Add click handler to toggle visibility
   tweetElement.addEventListener('click', function toggleTweet(e) {
-    // Don't trigger if clicking directly on the minimize button or like button
-    if (e.target === minimizeButton ||
+    // Don't trigger if clicking directly on any of our buttons or like button
+    if (e.target === minimizeButton || 
+        e.target === whitelistButton ||
         e.target.closest('button[data-testid="like"]') ||
         e.target.closest('button[data-testid="unlike"]')) {
       return;
@@ -519,6 +540,7 @@ async function hideTweet(tweetElement) {
       this.style.opacity = '0.8';
       filterIndicator.textContent = '🤖 Filtered';
       minimizeButton.style.display = 'block';
+      whitelistButton.style.display = 'block';
       e.stopPropagation(); // Prevent tweet interaction on first click
     }
   }, true);
@@ -530,7 +552,66 @@ async function hideTweet(tweetElement) {
     tweetElement.style.opacity = '0.5';
     filterIndicator.textContent = '🤖 Filtered';
     minimizeButton.style.display = 'none';
+    whitelistButton.style.display = 'none';
     e.stopPropagation(); // Prevent the tweet's click handler from firing
+  });
+  
+  // Add click handler for the whitelist button
+  whitelistButton.addEventListener('click', async (e) => {
+    e.stopPropagation(); // Prevent the tweet's click handler from firing
+    
+    // Get the tweet author info
+    const tweetContent = extractTweetContent(tweetElement);
+    const authorHandle = tweetContent.author.handle.replace('@', '');
+    
+    if (!authorHandle) {
+      console.error('Could not extract author handle');
+      return;
+    }
+    
+    try {
+      // Get current settings
+      const { settings } = await chrome.storage.sync.get('settings');
+      
+      // Add to whitelist if not already there
+      if (!settings.llmFiltering.filterSettings.whitelist) {
+        settings.llmFiltering.filterSettings.whitelist = [];
+      }
+      
+      // Check if already in whitelist
+      if (!settings.llmFiltering.filterSettings.whitelist.includes(authorHandle)) {
+        // Add to whitelist
+        settings.llmFiltering.filterSettings.whitelist.push(authorHandle);
+        
+        // Save updated settings
+        await chrome.storage.sync.set({ settings });
+        
+        // Update button text to provide feedback
+        whitelistButton.textContent = '✅ Added to Whitelist';
+        whitelistButton.style.backgroundColor = 'rgba(0, 186, 124, 0.9)'; // Green
+        
+        // Restore tweet visibility
+        setTimeout(() => {
+          tweetElement.style.maxHeight = '';
+          tweetElement.style.overflow = '';
+          tweetElement.style.opacity = '1';
+          tweetElement.style.backgroundImage = 'none';
+          
+          // Remove the filtered class and indicators
+          tweetElement.classList.remove('llm-filtered');
+          if (filterIndicator) filterIndicator.remove();
+          if (minimizeButton) minimizeButton.remove();
+          if (whitelistButton) whitelistButton.remove();
+        }, 1500);
+      } else {
+        // Already in whitelist
+        whitelistButton.textContent = '✓ Already in Whitelist';
+      }
+    } catch (error) {
+      console.error('Error adding to whitelist:', error);
+      whitelistButton.textContent = '❌ Error';
+      whitelistButton.style.backgroundColor = 'rgba(244, 33, 46, 0.9)'; // Red
+    }
   });
   
   // Prevent like buttons from auto-minimizing the tweet
@@ -548,6 +629,23 @@ async function evaluateTweetWithLLM(tweetElement, config) {
   // Extract all content from the tweet
   const tweetContent = extractTweetContent(tweetElement);
   
+  // Check if the author is in the whitelist
+  const whitelist = config.filterSettings.whitelist || [];
+  const filterMode = config.filterSettings.filterMode || "normal";
+  const authorHandle = tweetContent.author.handle.toLowerCase().replace('@', '');
+  const isWhitelisted = whitelist.some(handle => handle.toLowerCase().replace('@', '') === authorHandle);
+  
+  // Handle whitelist modes
+  if (isWhitelisted && filterMode === "whitelist-bypass") {
+    // Always show whitelisted account tweets
+    return true;
+  }
+  
+  if (filterMode === "whitelist-only") {
+    // In whitelist-only mode, only show tweets from whitelisted accounts
+    return isWhitelisted;
+  }
+  
   // Apply automatic filters if configured
   if (shouldAutoFilter(tweetContent, config)) {
     return false; // Automatically filter out based on content type
@@ -559,6 +657,11 @@ async function evaluateTweetWithLLM(tweetElement, config) {
   }
   
   try {
+    // If author is whitelisted in normal mode, bypass LLM check
+    if (isWhitelisted && filterMode === "normal") {
+      return true;
+    }
+    
     // Process images if this is a multimodal-enabled model and tweet has images
     if (isMultimodalModel(config.apiSettings.model) && 
         (tweetContent.hasImages || (tweetContent.hasVideo && tweetContent.videoThumbnail))) {

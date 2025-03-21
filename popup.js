@@ -276,6 +276,14 @@ function initializeLLMFilteringUI() {
       // Initialize display options
       document.getElementById('completely-hide-filtered').checked =
         llmSettings.filterSettings.completelyHideFiltered === true;
+        
+      // Initialize whitelist settings
+      if (llmSettings.filterSettings.filterMode) {
+        document.getElementById('filter-mode').value = llmSettings.filterSettings.filterMode;
+      }
+      
+      // Populate whitelist items
+      renderWhitelistItems(llmSettings.filterSettings.whitelist || []);
     }
     
     // Set up event listeners
@@ -294,6 +302,22 @@ function initializeLLMFilteringUI() {
       } else {
         apiKeyInput.type = 'password';
         toggleVisibilityBtn.textContent = '👁️';
+      }
+    });
+    
+    // Whitelist management
+    const whitelistInput = document.getElementById('whitelist-input');
+    const addToWhitelistBtn = document.getElementById('add-to-whitelist');
+    
+    // Add handle to whitelist when button is clicked
+    addToWhitelistBtn.addEventListener('click', () => {
+      addHandleToWhitelist();
+    });
+    
+    // Also add handle when Enter key is pressed in the input field
+    whitelistInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        addHandleToWhitelist();
       }
     });
     
@@ -344,6 +368,103 @@ function addOption(selectElement, value, text) {
   selectElement.appendChild(option);
 }
 
+// Render whitelist items in the UI
+function renderWhitelistItems(whitelist) {
+  const container = document.getElementById('whitelist-items');
+  container.innerHTML = '';
+  
+  if (!whitelist || whitelist.length === 0) {
+    const emptyMessage = document.createElement('div');
+    emptyMessage.className = 'whitelist-empty';
+    emptyMessage.textContent = 'No accounts in whitelist';
+    container.appendChild(emptyMessage);
+    return;
+  }
+  
+  whitelist.forEach(handle => {
+    const item = document.createElement('div');
+    item.className = 'whitelist-item';
+    
+    const handleSpan = document.createElement('span');
+    handleSpan.className = 'handle';
+    handleSpan.textContent = handle.startsWith('@') ? handle : `@${handle}`;
+    
+    const removeBtn = document.createElement('span');
+    removeBtn.className = 'remove';
+    removeBtn.innerHTML = '&times;'; // × symbol
+    removeBtn.title = 'Remove from whitelist';
+    removeBtn.addEventListener('click', () => removeFromWhitelist(handle));
+    
+    item.appendChild(handleSpan);
+    item.appendChild(removeBtn);
+    container.appendChild(item);
+  });
+}
+
+// Add a handle to the whitelist
+function addHandleToWhitelist() {
+  const input = document.getElementById('whitelist-input');
+  const handle = input.value.trim().replace(/^@/, ''); // Remove @ if present
+  
+  if (!handle) return;
+  
+  browserAPI.storage.sync.get('settings', ({ settings = {} }) => {
+    if (!settings.llmFiltering) settings.llmFiltering = {};
+    if (!settings.llmFiltering.filterSettings) settings.llmFiltering.filterSettings = {};
+    if (!settings.llmFiltering.filterSettings.whitelist) settings.llmFiltering.filterSettings.whitelist = [];
+    
+    // Check if already in whitelist
+    if (!settings.llmFiltering.filterSettings.whitelist.includes(handle)) {
+      settings.llmFiltering.filterSettings.whitelist.push(handle);
+      
+      // Save settings
+      browserAPI.storage.sync.set({ settings }, () => {
+        // Clear input and update UI
+        input.value = '';
+        renderWhitelistItems(settings.llmFiltering.filterSettings.whitelist);
+        
+        // Notify tabs to update
+        updateTabsAfterWhitelistChange();
+      });
+    } else {
+      input.value = '';
+      // Could add some visual feedback here that the handle is already in the list
+    }
+  });
+}
+
+// Remove a handle from the whitelist
+function removeFromWhitelist(handle) {
+  browserAPI.storage.sync.get('settings', ({ settings = {} }) => {
+    if (!settings.llmFiltering?.filterSettings?.whitelist) return;
+    
+    // Remove the handle
+    settings.llmFiltering.filterSettings.whitelist = 
+      settings.llmFiltering.filterSettings.whitelist.filter(h => h !== handle);
+    
+    // Save settings
+    browserAPI.storage.sync.set({ settings }, () => {
+      // Update UI
+      renderWhitelistItems(settings.llmFiltering.filterSettings.whitelist);
+      
+      // Notify tabs to update
+      updateTabsAfterWhitelistChange();
+    });
+  });
+}
+
+// Update tabs after whitelist changes
+function updateTabsAfterWhitelistChange() {
+  browserAPI.tabs.query({ url: ['*://twitter.com/*', '*://x.com/*'] }, (tabs) => {
+    tabs.forEach(tab => {
+      browserAPI.tabs.sendMessage(tab.id, {
+        type: 'refreshTheme',
+        modType: 'llmFiltering'
+      }).catch(err => console.error(`Failed to update tab ${tab.id}:`, err));
+    });
+  });
+}
+
 // Function to update LLM settings in storage
 function updateLLMSettings() {
   browserAPI.storage.sync.get('settings', ({ settings = {} }) => {
@@ -367,6 +488,9 @@ function updateLLMSettings() {
     if (document.getElementById('filter-for-you').checked) timelineTypes.push('for-you');
     if (document.getElementById('filter-following').checked) timelineTypes.push('following');
     
+    // Preserve whitelist if it exists
+    const existingWhitelist = settings.llmFiltering.filterSettings?.whitelist || [];
+    
     settings.llmFiltering.filterSettings = {
       prompt: document.getElementById('llm-prompt').value,
       cacheResults: document.getElementById('cache-results').checked,
@@ -382,7 +506,11 @@ function updateLLMSettings() {
       lowBandwidthMode: document.getElementById('low-bandwidth-mode').checked,
       
       // Add display options
-      completelyHideFiltered: document.getElementById('completely-hide-filtered').checked
+      completelyHideFiltered: document.getElementById('completely-hide-filtered').checked,
+      
+      // Add whitelist settings
+      whitelist: existingWhitelist,
+      filterMode: document.getElementById('filter-mode').value
     };
     
     // Save settings

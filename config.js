@@ -629,7 +629,11 @@ const TWITTER_MODS = {
       lowBandwidthMode: false,
       
       // Display options
-      completelyHideFiltered: false // Option to completely hide filtered tweets instead of showing minimized
+      completelyHideFiltered: false, // Option to completely hide filtered tweets instead of showing minimized
+      
+      // Whitelist settings
+      whitelist: [], // Array of account handles to always show
+      filterMode: "normal" // "normal", "whitelist-only", "whitelist-bypass"
     }
   }
 };

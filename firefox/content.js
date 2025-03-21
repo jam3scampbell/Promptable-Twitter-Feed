@@ -311,7 +311,7 @@ const FeatureHandlers = {
         
         try {
           // Send to LLM for evaluation
-          const shouldShow = await evaluateTweetWithLLM(tweetText, config);
+          const shouldShow = await evaluateTweetWithLLM(tweetText, config, tweetElement);
           
           // Log the decision with a snippet of the tweet text for debugging
           const tweetPreview = tweetText.length > 50 ? tweetText.substring(0, 50) + '...' : tweetText;
@@ -436,12 +436,22 @@ function hashString(str) {
 }
 
 // Hide a tweet that doesn't pass the filter
-function hideTweet(tweetElement) {
-  // Store original display value for potential toggling in debug mode
+async function hideTweet(tweetElement) {
+  // Get settings to check if we should completely hide the tweet
+  const { settings } = await browser.storage.local.get('settings');
+  const completelyHideFiltered = settings?.llmFiltering?.filterSettings?.completelyHideFiltered === true;
+  
+  if (completelyHideFiltered) {
+    // Completely hide the tweet
+    tweetElement.style.display = 'none';
+    tweetElement.classList.add('llm-filtered-hidden');
+    return;
+  }
+  
+  // Store original display value for potential toggling
   tweetElement.dataset.originalDisplay = tweetElement.style.display || '';
   
   // Instead of completely hiding, make it compact with a visual indicator
-  // This makes it easier to see which tweets were filtered
   tweetElement.style.maxHeight = '40px';
   tweetElement.style.overflow = 'hidden';
   tweetElement.style.opacity = '0.5';
@@ -456,6 +466,7 @@ function hideTweet(tweetElement) {
   // Add a visual indicator that this tweet was filtered
   const filterIndicator = document.createElement('div');
   filterIndicator.textContent = '🤖 Filtered';
+  filterIndicator.className = 'filter-indicator';
   filterIndicator.style.position = 'absolute';
   filterIndicator.style.top = '10px';
   filterIndicator.style.left = '10px';
@@ -471,25 +482,173 @@ function hideTweet(tweetElement) {
   filterIndicator.style.pointerEvents = 'none';
   tweetElement.appendChild(filterIndicator);
   
-  // Add click handler to toggle visibility (for debug purposes)
-  tweetElement.addEventListener('click', (e) => {
-    if (tweetElement.style.maxHeight === '40px') {
-      tweetElement.style.maxHeight = 'none';
-      tweetElement.style.opacity = '0.8';
-      filterIndicator.textContent = '🤖 Filtered (tap to collapse)';
-      filterIndicator.style.backgroundColor = 'rgba(29, 155, 240, 0.9)';
-      e.stopPropagation(); // Prevent tweet interaction
-    } else {
-      tweetElement.style.maxHeight = '40px';
-      tweetElement.style.opacity = '0.5';
+  // Add a minimize button that stays in expanded view
+  const minimizeButton = document.createElement('div');
+  minimizeButton.className = 'minimize-button';
+  minimizeButton.textContent = '🔼 Minimize';
+  minimizeButton.style.position = 'absolute';
+  minimizeButton.style.bottom = '10px';
+  minimizeButton.style.right = '10px';
+  minimizeButton.style.backgroundColor = 'rgba(29, 155, 240, 0.9)';
+  minimizeButton.style.color = 'white';
+  minimizeButton.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  minimizeButton.style.padding = '2px 8px';
+  minimizeButton.style.borderRadius = '12px';
+  minimizeButton.style.fontSize = '12px';
+  minimizeButton.style.fontWeight = '500';
+  minimizeButton.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.15)';
+  minimizeButton.style.zIndex = '100';
+  minimizeButton.style.display = 'none'; // Initially hidden
+  minimizeButton.style.cursor = 'pointer';
+  tweetElement.appendChild(minimizeButton);
+  
+  // Add whitelist button
+  const whitelistButton = document.createElement('div');
+  whitelistButton.className = 'whitelist-button';
+  whitelistButton.textContent = '⭐ Add to Whitelist';
+  whitelistButton.style.position = 'absolute';
+  whitelistButton.style.bottom = '10px';
+  whitelistButton.style.left = '10px';
+  whitelistButton.style.backgroundColor = 'rgba(29, 155, 240, 0.9)';
+  whitelistButton.style.color = 'white';
+  whitelistButton.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  whitelistButton.style.padding = '2px 8px';
+  whitelistButton.style.borderRadius = '12px';
+  whitelistButton.style.fontSize = '12px';
+  whitelistButton.style.fontWeight = '500';
+  whitelistButton.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.15)';
+  whitelistButton.style.zIndex = '100';
+  whitelistButton.style.display = 'none'; // Initially hidden
+  whitelistButton.style.cursor = 'pointer';
+  tweetElement.appendChild(whitelistButton);
+  
+  // Add click handler to toggle visibility
+  tweetElement.addEventListener('click', function toggleTweet(e) {
+    // Don't trigger if clicking directly on any of our buttons or like button
+    if (e.target === minimizeButton || 
+        e.target === whitelistButton ||
+        e.target.closest('button[data-testid="like"]') ||
+        e.target.closest('button[data-testid="unlike"]')) {
+      return;
+    }
+    
+    if (this.style.maxHeight === '40px') {
+      // Expand
+      this.style.maxHeight = 'none';
+      this.style.opacity = '0.8';
       filterIndicator.textContent = '🤖 Filtered';
+      minimizeButton.style.display = 'block';
+      whitelistButton.style.display = 'block';
+      e.stopPropagation(); // Prevent tweet interaction on first click
     }
   }, true);
+  
+  // Add click handler specifically for the minimize button
+  minimizeButton.addEventListener('click', (e) => {
+    // Minimize
+    tweetElement.style.maxHeight = '40px';
+    tweetElement.style.opacity = '0.5';
+    filterIndicator.textContent = '🤖 Filtered';
+    minimizeButton.style.display = 'none';
+    whitelistButton.style.display = 'none';
+    e.stopPropagation(); // Prevent the tweet's click handler from firing
+  });
+  
+  // Add click handler for the whitelist button
+  whitelistButton.addEventListener('click', async (e) => {
+    e.stopPropagation(); // Prevent the tweet's click handler from firing
+    
+    // Extract author handle from the tweet
+    const authorElement = tweetElement.querySelector('[data-testid="User-Name"] div:nth-child(2) > div:first-child > div:first-child');
+    const authorHandle = authorElement ? authorElement.textContent.trim().replace('@', '') : '';
+    
+    if (!authorHandle) {
+      console.error('Could not extract author handle');
+      return;
+    }
+    
+    try {
+      // Get current settings
+      const { settings } = await browser.storage.local.get('settings');
+      
+      // Add to whitelist if not already there
+      if (!settings.llmFiltering.filterSettings.whitelist) {
+        settings.llmFiltering.filterSettings.whitelist = [];
+      }
+      
+      // Check if already in whitelist
+      if (!settings.llmFiltering.filterSettings.whitelist.includes(authorHandle)) {
+        // Add to whitelist
+        settings.llmFiltering.filterSettings.whitelist.push(authorHandle);
+        
+        // Save updated settings
+        await browser.storage.local.set({ settings });
+        
+        // Update button text to provide feedback
+        whitelistButton.textContent = '✅ Added to Whitelist';
+        whitelistButton.style.backgroundColor = 'rgba(0, 186, 124, 0.9)'; // Green
+        
+        // Restore tweet visibility
+        setTimeout(() => {
+          tweetElement.style.maxHeight = '';
+          tweetElement.style.overflow = '';
+          tweetElement.style.opacity = '1';
+          tweetElement.style.backgroundImage = 'none';
+          
+          // Remove the filtered class and indicators
+          tweetElement.classList.remove('llm-filtered');
+          if (filterIndicator) filterIndicator.remove();
+          if (minimizeButton) minimizeButton.remove();
+          if (whitelistButton) whitelistButton.remove();
+        }, 1500);
+      } else {
+        // Already in whitelist
+        whitelistButton.textContent = '✓ Already in Whitelist';
+      }
+    } catch (error) {
+      console.error('Error adding to whitelist:', error);
+      whitelistButton.textContent = '❌ Error';
+      whitelistButton.style.backgroundColor = 'rgba(244, 33, 46, 0.9)'; // Red
+    }
+  });
+  
+  // Prevent like buttons from auto-minimizing the tweet
+  const likeButtons = tweetElement.querySelectorAll('button[data-testid="like"], button[data-testid="unlike"]');
+  likeButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent the tweet's click handler from firing
+    }, true);
+  });
 }
 
-async function evaluateTweetWithLLM(tweetText, config) {
+async function evaluateTweetWithLLM(tweetText, config, tweetElement) {
   if (!tweetText || tweetText.trim() === '') {
     return true; // Allow empty tweets through
+  }
+  
+  // Extract author handle from the tweet
+  const authorElement = tweetElement ? tweetElement.querySelector('[data-testid="User-Name"] div:nth-child(2) > div:first-child > div:first-child') : null;
+  const authorHandle = authorElement ? authorElement.textContent.trim().replace('@', '') : '';
+  
+  // Check if the author is in the whitelist
+  const whitelist = config.filterSettings.whitelist || [];
+  const filterMode = config.filterSettings.filterMode || "normal";
+  const isWhitelisted = authorHandle && whitelist.some(handle => handle.toLowerCase() === authorHandle.toLowerCase());
+  
+  // Handle whitelist modes
+  if (isWhitelisted && filterMode === "whitelist-bypass") {
+    // Always show whitelisted account tweets
+    return true;
+  }
+  
+  if (filterMode === "whitelist-only") {
+    // In whitelist-only mode, only show tweets from whitelisted accounts
+    return isWhitelisted;
+  }
+  
+  // If author is whitelisted in normal mode, bypass LLM check
+  if (isWhitelisted && filterMode === "normal") {
+    return true;
   }
 
   try {
