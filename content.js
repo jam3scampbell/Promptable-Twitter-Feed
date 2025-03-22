@@ -291,6 +291,9 @@ const FeatureHandlers = {
         // Skip if we've already processed this tweet
         if (tweetElement.dataset.llmProcessed) continue;
 
+        // Immediately hide the tweet and show loading state until processed
+        showTweetLoadingState(tweetElement);
+        
         // Mark as processed to avoid duplicate API calls
         tweetElement.dataset.llmProcessed = "pending";
 
@@ -300,7 +303,11 @@ const FeatureHandlers = {
         // Try to get from cache first if enabled
         if (config.filterSettings.cacheResults && tweetFilterCache.has(tweetId)) {
           const shouldShow = tweetFilterCache.get(tweetId);
-          if (!shouldShow) {
+          if (shouldShow) {
+            // Show the tweet if it's allowed
+            restoreTweet(tweetElement);
+          } else {
+            // Keep it hidden if filtered
             hideTweet(tweetElement);
           }
           continue;
@@ -326,8 +333,12 @@ const FeatureHandlers = {
             tweetFilterCache.set(tweetId, shouldShow);
           }
 
-          // Hide tweet if it doesn't pass the filter
-          if (!shouldShow) {
+          // Handle tweet visibility based on filtering decision
+          if (shouldShow) {
+            // The tweet passed the filter, so restore it to visibility
+            restoreTweet(tweetElement);
+          } else {
+            // The tweet didn't pass the filter, keep it hidden
             hideTweet(tweetElement);
           }
 
@@ -335,7 +346,8 @@ const FeatureHandlers = {
           tweetElement.dataset.llmProcessed = "complete";
         } catch (error) {
           console.error("Failed to process tweet with LLM:", error);
-          // On error, show the tweet (fail open)
+          // On error, restore the tweet (fail open)
+          restoreTweet(tweetElement);
           tweetElement.dataset.llmProcessed = "error";
         }
       }
@@ -435,6 +447,67 @@ function hashString(str) {
     hash = hash & hash; // Convert to 32bit integer
   }
   return hash.toString();
+}
+
+// Show loading state for a tweet while it's being processed
+function showTweetLoadingState(tweetElement) {
+  // Store original state
+  tweetElement.dataset.originalDisplay = tweetElement.style.display || '';
+  tweetElement.dataset.originalOpacity = tweetElement.style.opacity || '1';
+  
+  // Apply dimmed style to indicate loading state
+  tweetElement.style.opacity = '0.4';
+  tweetElement.style.position = 'relative';
+  
+  // Add a loading indicator
+  const loadingIndicator = document.createElement('div');
+  loadingIndicator.className = 'llm-loading-indicator';
+  loadingIndicator.style.position = 'absolute';
+  loadingIndicator.style.top = '10px';
+  loadingIndicator.style.left = '10px';
+  loadingIndicator.style.backgroundColor = 'rgba(29, 155, 240, 0.9)'; // Twitter blue with opacity
+  loadingIndicator.style.color = 'white';
+  loadingIndicator.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  loadingIndicator.style.padding = '2px 8px';
+  loadingIndicator.style.borderRadius = '12px';
+  loadingIndicator.style.fontSize = '12px';
+  loadingIndicator.style.fontWeight = '500';
+  loadingIndicator.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.15)';
+  loadingIndicator.style.zIndex = '100';
+  loadingIndicator.style.pointerEvents = 'none';
+  loadingIndicator.textContent = '🤖 Analyzing...';
+  tweetElement.appendChild(loadingIndicator);
+  
+  // Add a class for potential custom styling
+  tweetElement.classList.add('llm-loading');
+}
+
+// Restore a tweet to its normal state after being approved
+function restoreTweet(tweetElement) {
+  // Remove loading indicator if present
+  const loadingIndicator = tweetElement.querySelector('.llm-loading-indicator');
+  if (loadingIndicator) {
+    loadingIndicator.remove();
+  }
+  
+  // Remove loading class
+  tweetElement.classList.remove('llm-loading');
+  
+  // Restore original styles
+  tweetElement.style.opacity = tweetElement.dataset.originalOpacity || '1';
+  
+  // Remove any other filtering UI elements
+  const filterIndicator = tweetElement.querySelector('.filter-indicator');
+  if (filterIndicator) filterIndicator.remove();
+  
+  const minimizeButton = tweetElement.querySelector('.minimize-button');
+  if (minimizeButton) minimizeButton.remove();
+  
+  const whitelistButton = tweetElement.querySelector('.whitelist-button');
+  if (whitelistButton) whitelistButton.remove();
+  
+  // Remove filtered class
+  tweetElement.classList.remove('llm-filtered');
 }
 
 // Hide a tweet that doesn't pass the filter
