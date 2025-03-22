@@ -516,6 +516,15 @@ async function hideTweet(tweetElement) {
   const { settings } = await chrome.storage.sync.get('settings');
   const completelyHideFiltered = settings?.llmFiltering?.filterSettings?.completelyHideFiltered === true;
   
+  // First remove any loading indicator
+  const loadingIndicator = tweetElement.querySelector('.llm-loading-indicator');
+  if (loadingIndicator) {
+    loadingIndicator.remove();
+  }
+  
+  // Remove loading class
+  tweetElement.classList.remove('llm-loading');
+  
   if (completelyHideFiltered) {
     // Completely hide the tweet
     tweetElement.style.display = 'none';
