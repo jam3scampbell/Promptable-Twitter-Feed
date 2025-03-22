@@ -767,17 +767,62 @@ async function evaluateTweetWithLLM(tweetElement, config) {
       
       // Convert images to base64
       if (tweetContent.hasImages) {
-        const base64Images = await Promise.all(
-          tweetContent.images.map(async url => await getImageAsBase64(url))
-        );
-        // Filter out any failed conversions
-        tweetContent.images = base64Images.filter(img => img !== null);
+        let hasImageProcessingFailure = false;
+        const base64Images = [];
+        
+        for (const url of tweetContent.images) {
+          try {
+            const base64Image = await getImageAsBase64(url);
+            if (base64Image !== null) {
+              base64Images.push(base64Image);
+            } else {
+              hasImageProcessingFailure = true;
+              console.log(`Failed to process image: ${url}`);
+            }
+          } catch (err) {
+            hasImageProcessingFailure = true;
+            console.log(`Error processing image: ${url}`, err);
+          }
+        }
+        
+        tweetContent.images = base64Images;
+        
+        // If we have image failures and no successfully processed images, reject the tweet
+        if (hasImageProcessingFailure && base64Images.length === 0) {
+          console.log(`${logPrefix} Rejecting tweet due to complete image processing failure`);
+          return false; // Hide the tweet
+        }
       }
       
       // Convert video thumbnail to base64 if available
       if (tweetContent.hasVideo && tweetContent.videoThumbnail && 
           tweetContent.videoThumbnail !== "VIDEO_WITHOUT_THUMBNAIL") {
-        tweetContent.videoThumbnail = await getImageAsBase64(tweetContent.videoThumbnail);
+        try {
+          const base64Thumbnail = await getImageAsBase64(tweetContent.videoThumbnail);
+          if (base64Thumbnail !== null) {
+            tweetContent.videoThumbnail = base64Thumbnail;
+          } else {
+            console.log(`Failed to process video thumbnail: ${tweetContent.videoThumbnail}`);
+            
+            // If this tweet's only media was a video and the thumbnail failed, reject it
+            if (!tweetContent.hasImages || tweetContent.images.length === 0) {
+              console.log(`${logPrefix} Rejecting tweet due to video thumbnail processing failure`);
+              return false; // Hide the tweet
+            }
+            
+            tweetContent.videoThumbnail = "VIDEO_WITHOUT_THUMBNAIL";
+          }
+        } catch (err) {
+          console.log(`Error processing video thumbnail: ${tweetContent.videoThumbnail}`, err);
+          
+          // If this tweet's only media was a video and the thumbnail failed, reject it
+          if (!tweetContent.hasImages || tweetContent.images.length === 0) {
+            console.log(`${logPrefix} Rejecting tweet due to video thumbnail processing failure`);
+            return false; // Hide the tweet
+          }
+          
+          tweetContent.videoThumbnail = "VIDEO_WITHOUT_THUMBNAIL";
+        }
       }
     }
     
@@ -795,14 +840,14 @@ async function evaluateTweetWithLLM(tweetElement, config) {
     
     if (!response || !response.success) {
       console.log(`${logPrefix} API request failed:`, response?.error || 'Unknown error');
-      return true; // Default to showing tweet on error
+      return false; // Default to hiding tweet on error
     }
     
     // Parse response - looking for YES/NO
     return parseResponse(response.data, tweetAuthor);
   } catch (error) {
     console.error('Error in evaluateTweetWithLLM:', error);
-    return true; // Default to showing tweet on error
+    return false; // Default to hiding tweet on error
   }
 }
 
