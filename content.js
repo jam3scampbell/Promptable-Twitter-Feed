@@ -313,43 +313,50 @@ const FeatureHandlers = {
           continue;
         }
 
-        try {
-          // Evaluate the tweet with the LLM
-          const shouldShow = await evaluateTweetWithLLM(tweetElement, config);
+        // Process this tweet - use immediately invoked async function
+        (async function processTweet(tweet) {
+          try {
+            // Add a short delay to allow images to fully load in the DOM
+            // This helps ensure all images are detected before being sent to the LLM
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Evaluate the tweet with the LLM
+            const shouldShow = await evaluateTweetWithLLM(tweet, config);
 
-          // Extract content for logging
-          const tweetContent = extractTweetContent(tweetElement);
-          const contentType = tweetContent.contentType;
-          const tweetPreview = tweetContent.text.length > 50 ?
-            tweetContent.text.substring(0, 50) + '...' : tweetContent.text;
+            // Extract content for logging
+            const tweetContent = extractTweetContent(tweet);
+            const contentType = tweetContent.contentType;
+            const tweetPreview = tweetContent.text.length > 50 ?
+              tweetContent.text.substring(0, 50) + '...' : tweetContent.text;
 
-          // Log the decision with content info
-          console.log(
-            `LLM Filter: ${shouldShow ? '✅ ALLOWED' : '❌ FILTERED'} ${contentType} tweet by ${tweetContent.author.name}: "${tweetPreview}"`
-          );
+            // Log the decision with content info
+            console.log(
+              `LLM Filter: ${shouldShow ? '✅ ALLOWED' : '❌ FILTERED'} ${contentType} tweet by ${tweetContent.author.name}: "${tweetPreview}"`
+            );
 
-          // Cache the result
-          if (config.filterSettings.cacheResults) {
-            tweetFilterCache.set(tweetId, shouldShow);
+            // Cache the result
+            if (config.filterSettings.cacheResults) {
+              tweetFilterCache.set(tweetId, shouldShow);
+            }
+
+            // Handle tweet visibility based on filtering decision
+            if (shouldShow) {
+              // The tweet passed the filter, so restore it to visibility
+              restoreTweet(tweet);
+            } else {
+              // The tweet didn't pass the filter, keep it hidden
+              hideTweet(tweet);
+            }
+
+            // Mark as fully processed
+            tweet.dataset.llmProcessed = "complete";
+          } catch (error) {
+            console.error("Failed to process tweet with LLM:", error);
+            // On error, restore the tweet (fail open)
+            restoreTweet(tweet);
+            tweet.dataset.llmProcessed = "error";
           }
-
-          // Handle tweet visibility based on filtering decision
-          if (shouldShow) {
-            // The tweet passed the filter, so restore it to visibility
-            restoreTweet(tweetElement);
-          } else {
-            // The tweet didn't pass the filter, keep it hidden
-            hideTweet(tweetElement);
-          }
-
-          // Mark as fully processed
-          tweetElement.dataset.llmProcessed = "complete";
-        } catch (error) {
-          console.error("Failed to process tweet with LLM:", error);
-          // On error, restore the tweet (fail open)
-          restoreTweet(tweetElement);
-          tweetElement.dataset.llmProcessed = "error";
-        }
+        })(tweetElement); // Pass the current tweet to the immediately invoked function
       }
     });
 
@@ -708,6 +715,10 @@ async function hideTweet(tweetElement) {
 // Function to evaluate a tweet using the configured LLM
 
 async function evaluateTweetWithLLM(tweetElement, config) {
+  // Force image loading by triggering a layout calculation
+  // This might help with loading lazy-loaded images before extraction
+  tweetElement.getBoundingClientRect();
+  
   // Extract all content from the tweet
   const tweetContent = extractTweetContent(tweetElement);
   
@@ -968,7 +979,13 @@ function extractTweetImages(tweetElement) {
   
   console.log(`${logPrefix} Extracting images from tweet`);
 
-  // Find image containers - the standard way (main method)
+  // Force layout calculation to ensure images are loaded
+  tweetElement.getBoundingClientRect();
+  
+  // Try using multiple selectors to find image elements
+  // We use a more aggressive approach to catch all possible images
+  
+  // Method 1: Standard way - Find tweetPhoto containers
   const imageContainers = tweetElement.querySelectorAll('div[data-testid="tweetPhoto"]');
   console.log(`${logPrefix} Found ${imageContainers.length} image containers with [data-testid="tweetPhoto"]`);
 
@@ -994,44 +1011,57 @@ function extractTweetImages(tweetElement) {
     }
   });
   
-  // If we didn't find any images with the standard method, try alternate selectors
-  if (images.length === 0) {
-    console.log(`${logPrefix} Trying alternate method to find images`);
-    
-    // Alternative 1: Look for any images in the tweet that might be media
-    const allImages = tweetElement.querySelectorAll('img[src*="https"][src*="media"]');
-    console.log(`${logPrefix} Found ${allImages.length} potential media images with alternate method`);
-    
-    allImages.forEach((img, index) => {
-      if (img && img.src && !images.includes(img.src)) {
-        let highResUrl = img.src;
-        if (highResUrl.includes('?')) {
-          const baseUrl = highResUrl.split('?')[0];
-          highResUrl = `${baseUrl}?format=jpg&name=orig`;
-        }
-        images.push(highResUrl);
-        console.log(`${logPrefix} Found alternate image ${index + 1}: ${highResUrl.substring(0, 50)}...`);
+  // Method 2: Look for any images in the tweet that might be media
+  const allImages = tweetElement.querySelectorAll('img[src*="https"][src*="media"]');
+  console.log(`${logPrefix} Found ${allImages.length} potential media images with URL pattern`);
+  
+  allImages.forEach((img, index) => {
+    if (img && img.src && !images.some(url => url.includes(img.src))) {
+      let highResUrl = img.src;
+      if (highResUrl.includes('?')) {
+        const baseUrl = highResUrl.split('?')[0];
+        highResUrl = `${baseUrl}?format=jpg&name=orig`;
       }
-    });
-    
-    // Alternative 2: Look for any div that might be an image container
-    const possibleContainers = tweetElement.querySelectorAll('div[aria-label*="Image"]');
-    console.log(`${logPrefix} Found ${possibleContainers.length} possible image containers with [aria-label*="Image"]`);
-    
-    possibleContainers.forEach((container, index) => {
-      const img = container.querySelector('img[src*="https"]');
-      if (img && img.src && !images.includes(img.src)) {
-        let highResUrl = img.src;
-        if (highResUrl.includes('?')) {
-          const baseUrl = highResUrl.split('?')[0];
-          highResUrl = `${baseUrl}?format=jpg&name=orig`;
-        }
-        images.push(highResUrl);
-        console.log(`${logPrefix} Found image from aria-label container ${index + 1}: ${highResUrl.substring(0, 50)}...`);
+      images.push(highResUrl);
+      console.log(`${logPrefix} Found image by URL pattern ${index + 1}: ${highResUrl.substring(0, 50)}...`);
+    }
+  });
+  
+  // Method 3: Look for any div that might be an image container
+  const possibleContainers = tweetElement.querySelectorAll('div[aria-label*="Image"]');
+  console.log(`${logPrefix} Found ${possibleContainers.length} possible image containers with [aria-label*="Image"]`);
+  
+  possibleContainers.forEach((container, index) => {
+    const img = container.querySelector('img[src*="https"]');
+    if (img && img.src && !images.some(url => url.includes(img.src))) {
+      let highResUrl = img.src;
+      if (highResUrl.includes('?')) {
+        const baseUrl = highResUrl.split('?')[0];
+        highResUrl = `${baseUrl}?format=jpg&name=orig`;
       }
-    });
-  }
-
+      images.push(highResUrl);
+      console.log(`${logPrefix} Found image from aria-label container ${index + 1}: ${highResUrl.substring(0, 50)}...`);
+    }
+  });
+  
+  // Method 4: Look for any img with width/height that might be a media image
+  const largeImages = Array.from(tweetElement.querySelectorAll('img'))
+    .filter(img => img.width > 100 && img.height > 100 && img.src.includes('https'));
+  
+  console.log(`${logPrefix} Found ${largeImages.length} large images by dimensions`);
+  
+  largeImages.forEach((img, index) => {
+    if (img && img.src && !images.some(url => url.includes(img.src))) {
+      let highResUrl = img.src;
+      if (highResUrl.includes('?')) {
+        const baseUrl = highResUrl.split('?')[0];
+        highResUrl = `${baseUrl}?format=jpg&name=orig`;
+      }
+      images.push(highResUrl);
+      console.log(`${logPrefix} Found large image ${index + 1}: ${highResUrl.substring(0, 50)}...`);
+    }
+  });
+  
   console.log(`${logPrefix} Total images found: ${images.length}`);
   return images;
 }
