@@ -615,7 +615,7 @@ const TWITTER_MODS = {
       maxTokens: 100
     },
     filterSettings: {
-      prompt: "Evaluate if this tweet is high quality and informative. Consider both the text content and any images. Only respond with YES or NO.", // Default prompt
+      prompt: "You are analyzing tweets to determine if they contain ANY images. Your ONLY task is to check for the presence of images.\n\nRESPOND ONLY WITH:\n- 'YES' if the tweet contains at least one image\n- 'NO' if the tweet does NOT contain any images\n\nDo not consider video thumbnails, gifs, or profile pictures - only actual images embedded in the tweet.", // Default prompt
       cacheResults: true,
       filterTimelineTypes: ["for-you"], // Could also add "following", etc.
 
