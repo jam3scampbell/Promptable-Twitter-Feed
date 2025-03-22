@@ -629,14 +629,20 @@ async function evaluateTweetWithLLM(tweetElement, config) {
   // Extract all content from the tweet
   const tweetContent = extractTweetContent(tweetElement);
   
+  // Create a tweet identifier for logging
+  const tweetAuthor = tweetContent.author.name || 'Unknown';
+  const tweetId = extractTweetId(tweetElement) || 'unknown-id';
+  const logPrefix = `LLM Debug [${tweetAuthor}]:`;
+  
   // Log tweet content for debugging
-  console.log('LLM Debug: Tweet content:', {
+  console.log(`${logPrefix} Tweet content:`, {
     text: tweetContent.text,
     contentType: tweetContent.contentType,
     hasImages: tweetContent.hasImages,
     imageCount: tweetContent.images.length,
     hasVideo: tweetContent.hasVideo,
-    author: tweetContent.author.name
+    author: tweetContent.author.name,
+    id: tweetId
   });
   
   // Check if the author is in the whitelist
@@ -648,62 +654,62 @@ async function evaluateTweetWithLLM(tweetElement, config) {
   // Handle whitelist modes
   if (isWhitelisted && filterMode === "whitelist-bypass") {
     // Always show whitelisted account tweets
-    console.log('LLM Debug: Author is whitelisted, bypassing filter');
+    console.log(`${logPrefix} Author is whitelisted, bypassing filter`);
     return true;
   }
   
   if (filterMode === "whitelist-only") {
     // In whitelist-only mode, only show tweets from whitelisted accounts
-    console.log('LLM Debug: In whitelist-only mode, returning:', isWhitelisted);
+    console.log(`${logPrefix} In whitelist-only mode, returning:`, isWhitelisted);
     return isWhitelisted;
   }
   
   // Apply automatic filters if configured
   if (shouldAutoFilter(tweetContent, config)) {
-    console.log('LLM Debug: Auto-filtering based on content type:', tweetContent.contentType);
+    console.log(`${logPrefix} Auto-filtering based on content type:`, tweetContent.contentType);
     return false; // Automatically filter out based on content type
   }
   
   // For empty tweets (no text, images, or video), allow through
   if (tweetContent.contentType === 'empty') {
-    console.log('LLM Debug: Empty tweet, allowing through');
+    console.log(`${logPrefix} Empty tweet, allowing through`);
     return true;
   }
   
   try {
     // If author is whitelisted in normal mode, bypass LLM check
     if (isWhitelisted && filterMode === "normal") {
-      console.log('LLM Debug: Author is whitelisted in normal mode, showing tweet');
+      console.log(`${logPrefix} Author is whitelisted in normal mode, showing tweet`);
       return true;
     }
     
     // Check if multimodal model is being used
     const isMultimodal = isMultimodalModel(config.apiSettings.model);
-    console.log(`LLM Debug: Using model ${config.apiSettings.model}, multimodal support: ${isMultimodal}`);
+    console.log(`${logPrefix} Using model ${config.apiSettings.model}, multimodal support: ${isMultimodal}`);
     
     // Process images if this is a multimodal-enabled model and tweet has images
     if (isMultimodal && 
         (tweetContent.hasImages || (tweetContent.hasVideo && tweetContent.videoThumbnail))) {
-      console.log('LLM Debug: Processing images for multimodal input');
+      console.log(`${logPrefix} Processing images for multimodal input`);
       
       // Convert images to base64
       if (tweetContent.hasImages) {
-        console.log(`LLM Debug: Converting ${tweetContent.images.length} images to base64`);
+        console.log(`${logPrefix} Converting ${tweetContent.images.length} images to base64`);
         const base64Images = await Promise.all(
           tweetContent.images.map(async url => await getImageAsBase64(url))
         );
         // Filter out any failed conversions
         const originalCount = tweetContent.images.length;
         tweetContent.images = base64Images.filter(img => img !== null);
-        console.log(`LLM Debug: Successfully converted ${tweetContent.images.length}/${originalCount} images`);
+        console.log(`${logPrefix} Successfully converted ${tweetContent.images.length}/${originalCount} images`);
       }
       
       // Convert video thumbnail to base64 if available
       if (tweetContent.hasVideo && tweetContent.videoThumbnail && 
           tweetContent.videoThumbnail !== "VIDEO_WITHOUT_THUMBNAIL") {
-        console.log('LLM Debug: Converting video thumbnail to base64');
+        console.log(`${logPrefix} Converting video thumbnail to base64`);
         tweetContent.videoThumbnail = await getImageAsBase64(tweetContent.videoThumbnail);
-        console.log(`LLM Debug: Video thumbnail conversion ${tweetContent.videoThumbnail ? 'succeeded' : 'failed'}`);
+        console.log(`${logPrefix} Video thumbnail conversion ${tweetContent.videoThumbnail ? 'succeeded' : 'failed'}`);
       }
     }
     
@@ -720,12 +726,12 @@ async function evaluateTweetWithLLM(tweetElement, config) {
     });
     
     if (!response || !response.success) {
-      console.error('LLM API request failed:', response?.error || 'Unknown error');
+      console.log(`${logPrefix} API request failed:`, response?.error || 'Unknown error');
       return true; // Default to showing tweet on error
     }
     
     // Parse response - looking for YES/NO
-    return parseResponse(response.data);
+    return parseResponse(response.data, tweetAuthor);
   } catch (error) {
     console.error('Error in evaluateTweetWithLLM:', error);
     return true; // Default to showing tweet on error
@@ -776,25 +782,27 @@ function isMultimodalModel(model) {
 
 
 // Parse the LLM response to determine if the tweet should be shown
-function parseResponse(response) {
+function parseResponse(response, tweetAuthor = 'Unknown') {
+  const logPrefix = `LLM Debug [${tweetAuthor}]:`;
+  
   if (!response) {
-    console.log('LLM Debug: Empty response received, defaulting to show tweet');
+    console.log(`${logPrefix} Empty response received, defaulting to show tweet`);
     return true;
   }
   
   // Log the raw response for debugging
-  console.log(`LLM Debug: Raw response: "${response}"`);
+  console.log(`${logPrefix} Raw response: "${response}"`);
   
   // Convert to lowercase and trim for consistent comparison
   const normalizedResponse = response.toLowerCase().trim();
-  console.log(`LLM Debug: Normalized response: "${normalizedResponse}"`);
+  console.log(`${logPrefix} Normalized response: "${normalizedResponse}"`);
   
   // Check for various forms of "no"
   if (normalizedResponse.includes('no') || 
       normalizedResponse === 'n' || 
       normalizedResponse === 'false' || 
       normalizedResponse === '0') {
-    console.log('LLM Debug: Detected "NO" in response, filtering tweet');
+    console.log(`${logPrefix} Detected "NO" in response, filtering tweet`);
     return false;
   }
   
@@ -803,12 +811,12 @@ function parseResponse(response) {
       normalizedResponse === 'y' || 
       normalizedResponse === 'true' || 
       normalizedResponse === '1') {
-    console.log('LLM Debug: Detected "YES" in response, showing tweet');
+    console.log(`${logPrefix} Detected "YES" in response, showing tweet`);
     return true;
   }
   
   // Default to showing the tweet if we're uncertain
-  console.log('LLM Debug: No clear YES/NO detected, defaulting to show tweet');
+  console.log(`${logPrefix} No clear YES/NO detected, defaulting to show tweet`);
   return true;
 }
 
@@ -820,6 +828,7 @@ function extractTweetContent(tweetElement) {
 
   // Get author information
   const authorInfo = extractAuthorInfo(tweetElement);
+  const authorName = authorInfo.name || "Unknown";
 
   // Get images
   const images = extractTweetImages(tweetElement);
@@ -828,7 +837,7 @@ function extractTweetContent(tweetElement) {
   const videoThumbnail = extractVideoThumbnail(tweetElement);
 
   // Determine tweet content type
-  const contentType = determineTweetType(tweetText, images, videoThumbnail);
+  const contentType = determineTweetType(tweetText, images, videoThumbnail, authorName);
 
   return {
     text: tweetText,
@@ -866,11 +875,20 @@ function extractAuthorInfo(tweetElement) {
 function extractTweetImages(tweetElement) {
   const images = [];
   
-  console.log('LLM Debug: Extracting images from tweet');
+  // Try to get author info for better logging
+  let authorName = "Unknown";
+  try {
+    const authorInfo = extractAuthorInfo(tweetElement);
+    authorName = authorInfo.name || "Unknown";
+  } catch (e) {}
+  
+  const logPrefix = `LLM Debug [${authorName}]:`;
+  
+  console.log(`${logPrefix} Extracting images from tweet`);
 
   // Find image containers - the standard way (main method)
   const imageContainers = tweetElement.querySelectorAll('div[data-testid="tweetPhoto"]');
-  console.log(`LLM Debug: Found ${imageContainers.length} image containers with [data-testid="tweetPhoto"]`);
+  console.log(`${logPrefix} Found ${imageContainers.length} image containers with [data-testid="tweetPhoto"]`);
 
   imageContainers.forEach((container, index) => {
     const img = container.querySelector('img[src*="https"]');
@@ -888,19 +906,19 @@ function extractTweetImages(tweetElement) {
       }
 
       images.push(highResUrl);
-      console.log(`LLM Debug: Found image ${index + 1}: ${highResUrl.substring(0, 50)}...`);
+      console.log(`${logPrefix} Found image ${index + 1}: ${highResUrl.substring(0, 50)}...`);
     } else {
-      console.log(`LLM Debug: Container ${index + 1} has no valid img element`);
+      console.log(`${logPrefix} Container ${index + 1} has no valid img element`);
     }
   });
   
   // If we didn't find any images with the standard method, try alternate selectors
   if (images.length === 0) {
-    console.log('LLM Debug: Trying alternate method to find images');
+    console.log(`${logPrefix} Trying alternate method to find images`);
     
     // Alternative 1: Look for any images in the tweet that might be media
     const allImages = tweetElement.querySelectorAll('img[src*="https"][src*="media"]');
-    console.log(`LLM Debug: Found ${allImages.length} potential media images with alternate method`);
+    console.log(`${logPrefix} Found ${allImages.length} potential media images with alternate method`);
     
     allImages.forEach((img, index) => {
       if (img && img.src && !images.includes(img.src)) {
@@ -910,13 +928,13 @@ function extractTweetImages(tweetElement) {
           highResUrl = `${baseUrl}?format=jpg&name=orig`;
         }
         images.push(highResUrl);
-        console.log(`LLM Debug: Found alternate image ${index + 1}: ${highResUrl.substring(0, 50)}...`);
+        console.log(`${logPrefix} Found alternate image ${index + 1}: ${highResUrl.substring(0, 50)}...`);
       }
     });
     
     // Alternative 2: Look for any div that might be an image container
     const possibleContainers = tweetElement.querySelectorAll('div[aria-label*="Image"]');
-    console.log(`LLM Debug: Found ${possibleContainers.length} possible image containers with [aria-label*="Image"]`);
+    console.log(`${logPrefix} Found ${possibleContainers.length} possible image containers with [aria-label*="Image"]`);
     
     possibleContainers.forEach((container, index) => {
       const img = container.querySelector('img[src*="https"]');
@@ -927,74 +945,85 @@ function extractTweetImages(tweetElement) {
           highResUrl = `${baseUrl}?format=jpg&name=orig`;
         }
         images.push(highResUrl);
-        console.log(`LLM Debug: Found image from aria-label container ${index + 1}: ${highResUrl.substring(0, 50)}...`);
+        console.log(`${logPrefix} Found image from aria-label container ${index + 1}: ${highResUrl.substring(0, 50)}...`);
       }
     });
   }
 
-  console.log(`LLM Debug: Total images found: ${images.length}`);
+  console.log(`${logPrefix} Total images found: ${images.length}`);
   return images;
 }
 
 // Extract video thumbnail from a tweet (if present)
 function extractVideoThumbnail(tweetElement) {
-  console.log('LLM Debug: Checking for video content in tweet');
+  // Try to get author info for better logging
+  let authorName = "Unknown";
+  try {
+    const authorInfo = extractAuthorInfo(tweetElement);
+    authorName = authorInfo.name || "Unknown";
+  } catch (e) {}
+  
+  const logPrefix = `LLM Debug [${authorName}]:`;
+  
+  console.log(`${logPrefix} Checking for video content in tweet`);
   
   // Check for video player
   const videoContainer = tweetElement.querySelector('div[data-testid="videoPlayer"]');
   if (!videoContainer) {
-    console.log('LLM Debug: No video player found in tweet');
+    console.log(`${logPrefix} No video player found in tweet`);
     
     // Try alternative video detection (X sometimes changes their DOM structure)
     const alternateVideoContainers = tweetElement.querySelectorAll('div[aria-label*="Video"]');
     if (alternateVideoContainers.length > 0) {
-      console.log(`LLM Debug: Found ${alternateVideoContainers.length} alternative video containers`);
+      console.log(`${logPrefix} Found ${alternateVideoContainers.length} alternative video containers`);
       
       // Try to find a poster image in any of them
       for (const container of alternateVideoContainers) {
         const img = container.querySelector('img[src*="https"]');
         if (img && img.src) {
-          console.log(`LLM Debug: Found video thumbnail in alternative container: ${img.src.substring(0, 50)}...`);
+          console.log(`${logPrefix} Found video thumbnail in alternative container: ${img.src.substring(0, 50)}...`);
           return img.src;
         }
       }
       
       // If we found video containers but no thumbnails
-      console.log('LLM Debug: Alternative video containers found, but no thumbnails');
+      console.log(`${logPrefix} Alternative video containers found, but no thumbnails`);
       return "VIDEO_WITHOUT_THUMBNAIL";
     }
     
     return null;
   }
   
-  console.log('LLM Debug: Video player found in tweet');
+  console.log(`${logPrefix} Video player found in tweet`);
 
   // Try to find the poster/thumbnail image
   const posterImage = videoContainer.querySelector('img[src*="https"]');
   if (posterImage && posterImage.src) {
-    console.log(`LLM Debug: Found video poster image: ${posterImage.src.substring(0, 50)}...`);
+    console.log(`${logPrefix} Found video poster image: ${posterImage.src.substring(0, 50)}...`);
     return posterImage.src;
   }
 
   // Fallback method - look for any image inside the video container
   const anyImage = videoContainer.querySelector('img[src*="https"]');
   if (anyImage && anyImage.src) {
-    console.log(`LLM Debug: Found fallback video image: ${anyImage.src.substring(0, 50)}...`);
+    console.log(`${logPrefix} Found fallback video image: ${anyImage.src.substring(0, 50)}...`);
     return anyImage.src;
   }
 
   // If we found a video but no thumbnail, return a placeholder
-  console.log('LLM Debug: Video player found, but no thumbnail available');
+  console.log(`${logPrefix} Video player found, but no thumbnail available`);
   return videoContainer ? "VIDEO_WITHOUT_THUMBNAIL" : null;
 }
 
 // Determine the type of the tweet based on content
-function determineTweetType(text, images, videoThumbnail) {
+function determineTweetType(text, images, videoThumbnail, authorName = "Unknown") {
   const hasText = text.trim().length > 0;
   const hasImages = images.length > 0;
   const hasVideo = videoThumbnail !== null;
   
-  console.log('LLM Debug: Determining tweet type:', {
+  const logPrefix = `LLM Debug [${authorName}]:`;
+  
+  console.log(`${logPrefix} Determining tweet type:`, {
     hasText,
     textLength: text.length,
     hasImages,
@@ -1012,7 +1041,7 @@ function determineTweetType(text, images, videoThumbnail) {
     contentType = hasText ? 'text_only' : 'empty';
   }
   
-  console.log(`LLM Debug: Tweet classified as: ${contentType}`);
+  console.log(`${logPrefix} Tweet classified as: ${contentType}`);
   return contentType;
 }
 
